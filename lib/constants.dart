@@ -29,7 +29,7 @@ const KTextFieldDecoration =  InputDecoration(
   ),
 );
 
-final kEmailDecoration = KTextFieldDecoration.copyWith(hintText: 'Enter youe email');
+final kEmailDecoration = KTextFieldDecoration.copyWith(hintText: 'Enter your email');
 
 final kPasswordDecoration = KTextFieldDecoration.copyWith(hintText: 'Enter your password');
 
@@ -52,5 +52,25 @@ final kButtonLoginPageProperties = ElevatedButton.styleFrom(
     borderRadius: BorderRadius.circular(15),
   ),
   elevation: 0 ,
+);
 
+const kTextFieldDecoration = InputDecoration(
+  hintText: 'Enter your email ',
+  fillColor: Colors.white,
+  filled: true,
+  contentPadding:
+  EdgeInsets.symmetric(vertical: 20.0, horizontal: 20.0),
+  border: OutlineInputBorder(
+    borderRadius: BorderRadius.all(Radius.circular(32.0)),
+  ),
+  enabledBorder: OutlineInputBorder(
+    borderSide:
+    BorderSide(color: Color(0xFF9E1B1B), width: 1.0),
+    borderRadius: BorderRadius.all(Radius.circular(32.0)),
+  ),
+  focusedBorder: OutlineInputBorder(
+    borderSide:
+    BorderSide(color: Color(0xFF9E1B1B), width: 2.0),
+    borderRadius: BorderRadius.all(Radius.circular(32.0)),
+  ),
 );

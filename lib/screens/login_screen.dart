@@ -22,7 +22,8 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 50.0),
-              const  Text('LOGIN HERE', style: kTextProperties),
+              const  Text('LOGIN HERE',
+                  style: kTextProperties),
               const SizedBox(height: 20.0),
               const Text(
                 "Welcome back, you've\nbeen missed",
