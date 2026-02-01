@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:enstabhouse/screens/welcome_screen.dart';
-
+import 'package:enstabhouse/screens/login_screen.dart';
 
 
 void main() => runApp(MyApp());
@@ -21,7 +20,7 @@ class MyApp extends StatelessWidget {
        ),
        ),
       ),
-      home: FirstScreen(),
+        home: LoginScreen(),
     );
 
   }
