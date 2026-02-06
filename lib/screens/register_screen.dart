@@ -67,7 +67,7 @@ class RegisterScreen extends StatelessWidget {
                       prefixIcon: Icon(Icons.password_outlined)
                     ),
                   ),
-                  const SizedBox(height: 20.0,)
+                  const SizedBox(height: 20.0,) ,
                   const SizedBox(height: 20.0,
                   ) ,
                   TextField(
