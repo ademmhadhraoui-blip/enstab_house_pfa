@@ -1,4 +1,6 @@
+import 'package:enstabhouse/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:enstabhouse/screens/register_screen.dart';
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
@@ -7,14 +9,17 @@ class LoginScreen extends StatelessWidget {
     return Scaffold(
       body : Stack(
          children: [
-           Container(
-             decoration: BoxDecoration(
-               image: DecorationImage(
-                 image: AssetImage("images/logo.png") ,
-                 fit: BoxFit.cover ,
+           Positioned.fill(
+             child: Container(
+               decoration: BoxDecoration(
+                 image: DecorationImage(
+                   image: AssetImage("images/logo.png"
+                   ),
+                   fit: BoxFit.cover ,
+                 ),
                ),
              ),
-           ) ,
+           ),
 
            Center(
              child: SingleChildScrollView(
@@ -28,7 +33,7 @@ class LoginScreen extends StatelessWidget {
                      BoxShadow(
                        color: Colors.black12,
                        blurRadius: 20.0,
-                       offset: Offset(0 ,10) ,
+                       offset: Offset(0 ,10),
                      ),
                    ],
                  ),
@@ -62,23 +67,13 @@ class LoginScreen extends StatelessWidget {
                      ),
                      const SizedBox(height :20.0) ,
                      TextField(
-                       decoration: InputDecoration(
-                         labelText: "student@enstab.ucar.tn" ,
-                         labelStyle: TextStyle(
-                           color: Colors.grey.shade600,
-                         ),
-                         prefixIcon: const Icon(Icons.email_outlined),
-                           hintText: "student@enstab.ucar.tn",
-                           border: OutlineInputBorder(
-                             borderRadius: BorderRadius.circular(12) ,
-                           )
-                       ),
+                       decoration:kTextFilledDecoration,
                      ),
                      const SizedBox(height: 16.0,) ,
                       TextField(
                         obscureText: true,
                         decoration: InputDecoration(
-                          labelText: "enter your password",
+                          labelText: "Password",
                           labelStyle: TextStyle(
                             color: Colors.grey.shade600,
                           ),
@@ -89,7 +84,7 @@ class LoginScreen extends StatelessWidget {
                             suffixIcon: const Icon(Icons.visibility_off ,
                               color: Colors.grey,
                             ),
-                            hintText: "enter your password",
+                            hintText: "Enter your password",
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12.0),
                           )
@@ -131,7 +126,10 @@ class LoginScreen extends StatelessWidget {
                            )
                          ),
                          child: Text("Sign In" ,
-                         style: TextStyle(fontSize: 16.0),
+                         style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16.0
+                         ),
                          ),
                        ),
                      ),
@@ -144,7 +142,12 @@ class LoginScreen extends StatelessWidget {
                          ),
                          ),
                          GestureDetector(
-                           onTap:(){} ,
+                           onTap:(){
+                             Navigator.push(context , MaterialPageRoute(
+                               builder: (context)=> RegisterScreen() ,
+                             ),
+                             );
+                           } ,
                            child: Text("Register Now" ,
                            style: TextStyle(
                                color: Color(0xFF9E0815
@@ -154,7 +157,6 @@ class LoginScreen extends StatelessWidget {
                          )
                        ],
                      )
-
                    ],
                  ),
                ),
