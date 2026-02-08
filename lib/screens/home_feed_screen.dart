@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:enstabhouse/screens/menu_button.dart';
 
 class HomeFeedScreen extends StatelessWidget {
   const HomeFeedScreen({super.key});
@@ -24,10 +25,32 @@ class HomeFeedScreen extends StatelessWidget {
       comments: 30,
     ),
   ];
+  void _openMenuOverlay(context){
+    showGeneralDialog(context: context,
+      barrierDismissible: true ,
+      barrierLabel: "Menu" ,
+      barrierColor: Colors.black.withOpacity(0.4),
+      transitionDuration: const Duration(milliseconds: 300) ,
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return const MenuOverlay();
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final tween = Tween(
+          begin: const Offset(1, 0),
+          end: Offset.zero,
+        ).chain(CurveTween(curve: Curves.easeOutCubic));
+
+        return SlideTransition(
+          position: animation.drive(tween),
+          child: child,
+        );
+      },
+
+    ) ;
+  }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: Colors.grey[100],
       body: SafeArea(
@@ -74,6 +97,7 @@ class HomeFeedScreen extends StatelessWidget {
                       GestureDetector(
                         onTap: (){
                           //MENU
+                          _openMenuOverlay(context) ;
                         },
                         child: Icon(Icons.menu ,
                         color: Colors.white,
@@ -292,3 +316,30 @@ class PostCard extends StatelessWidget {
     );
   }
 }
+class MenuOverlay extends StatelessWidget {
+  const MenuOverlay({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerRight,
+        child:  FractionallySizedBox(
+        widthFactor: 0.85,
+        child: Material(
+          color: Colors.white,
+          child: SafeArea(
+            child: Column(
+              children: [
+                Text("Mon compte"),
+              ],
+            ),
+          ),
+        ),
+        ),
+        );
+
+  }
+}
+
+
+
