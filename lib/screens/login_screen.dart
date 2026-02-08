@@ -1,4 +1,5 @@
 import 'package:enstabhouse/constants.dart';
+import 'package:enstabhouse/screens/home_feed_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:enstabhouse/screens/register_screen.dart';
 class LoginScreen extends StatelessWidget {
@@ -106,7 +107,8 @@ class LoginScreen extends StatelessWidget {
                            child: Text("Forget Password ?",
                            style: TextStyle(
                              color: Color(0xFF9E0815),
-                           ),),
+                           ),
+                           ),
                            onPressed: (){
                              //mot de passe oublié !
                            },
@@ -118,7 +120,12 @@ class LoginScreen extends StatelessWidget {
                        width: double.infinity,
                        height: 50.0,
                        child: ElevatedButton(
-                         onPressed: (){},
+                         onPressed: (){
+                           Navigator.push(context, MaterialPageRoute(
+                               builder: (context)=> HomeFeedScreen()
+                           ) ,
+                           ) ;
+                         },
                          style: ElevatedButton.styleFrom(
                            backgroundColor: Color(0xFF9E0815) ,
                            shape: RoundedRectangleBorder(
