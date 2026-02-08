@@ -330,7 +330,7 @@ class MenuOverlay extends StatelessWidget {
           child: SafeArea(
             child: Column(
               children: [
-                Text("Mon compte"),
+                Text("My account"),
               ],
             ),
           ),
