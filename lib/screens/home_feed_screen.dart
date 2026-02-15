@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:enstabhouse/screens/menu_button.dart';
 
-class HomeFeedScreen extends StatelessWidget {
+
+class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key});
 
   // 🔹 Fake posts (simulation des publications utilisateurs)
@@ -17,14 +17,52 @@ class HomeFeedScreen extends StatelessWidget {
     ),
     Post(
       author: "Office of the Registrar",
-      category: "Administration",
+      category: "Admin",
       time: "4h",
       title: "Spring Semester Registration Opens",
       description: "Registration for Spring 2026 courses is now open.",
       likes: 120,
       comments: 30,
     ),
+    Post(
+        author: "Electronix",
+        category: "Clubs",
+        time: "3h",
+        title: "Recruiting",
+        description: "We are recruiting new members",
+        likes: 120,
+        comments: 20
+    ) ,
+    Post(author: "ACM",
+        category: "Clubs",
+        time: "4h",
+        title: "Bootcamp",
+        description:"Introduction to AI" ,
+        likes: 50,
+        comments: 10,
+    ),
+    Post(author: "Professor Bilel",
+        category: "Professors",
+        time: "4h", title: "java course ",
+        description: "Here you find java course ",
+        likes: 20,
+        comments: 10 ,
+    ) ,
+    Post(author: " Ahmed Ahmed ",
+        category: "Fundraising",
+        time: "8h",
+        title: "university decoration  ",
+        description: "we need your help to decorate our university",
+        likes: 20,
+        comments: 10,
+    ),
   ];
+
+  @override
+  State<HomeFeedScreen> createState() => _HomeFeedScreenState();
+}
+
+class _HomeFeedScreenState extends State<HomeFeedScreen> {
   void _openMenuOverlay(context){
     showGeneralDialog(context: context,
       barrierDismissible: true ,
@@ -118,9 +156,9 @@ class HomeFeedScreen extends StatelessWidget {
             // 🟡 Filters
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Expanded(
-                child: SizedBox(
-                  height: 40.0,
+              child: SizedBox(
+                height: 40.0,
+                child: Expanded(
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     children: const [
@@ -137,8 +175,8 @@ class HomeFeedScreen extends StatelessWidget {
                       FilterChipWidget(text: "Press", selected: false) ,
                       SizedBox(width: 8.0,) ,
                       FilterChipWidget(text: "Alumini", selected: false)
-
-
+                  
+                  
                     ],
                   ),
                 ),
@@ -148,9 +186,9 @@ class HomeFeedScreen extends StatelessWidget {
             // 📄 Feed list
             Expanded(
               child: ListView.builder(
-                itemCount: posts.length,
+                itemCount: HomeFeedScreen.posts.length,
                 itemBuilder: (context, index) {
-                  return PostCard(post: posts[index]);
+                  return PostCard(post: HomeFeedScreen.posts[index]);
                 },
               ),
             ),
@@ -330,7 +368,48 @@ class MenuOverlay extends StatelessWidget {
           child: SafeArea(
             child: Column(
               children: [
-                Text("My account"),
+                Container(
+                  width: double.infinity,
+                  height: 200,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF9E0815),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 20 , top: 20),
+                    child: const Text(
+                      "My account",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20.0,) ,
+
+                Align(
+                  alignment: AlignmentGeometry.topLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text("Personal Information" ,
+                    style: TextStyle(
+                      color: Colors.blueGrey ,
+                      fontSize: 23,
+                    ),
+                    ),
+                  ),
+                ) ,
+                SizedBox(height: 20.0,) ,
+                Container(
+                  height: 60,
+                  width: 300,
+                  padding: EdgeInsets.all(20.0),
+                  decoration: BoxDecoration(
+                    color: Colors.grey,
+                    borderRadius: BorderRadius.circular(15) ,
+                  ),
+                )
               ],
             ),
           ),
