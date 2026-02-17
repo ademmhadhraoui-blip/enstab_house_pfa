@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:enstabhouse/screens/clubs_pages.dart';
 
 
 class HomeFeedScreen extends StatefulWidget {
@@ -143,8 +144,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       SizedBox(width: 30.0) ,
                       GestureDetector(
                         onTap: (){
+                          Navigator.push(context, MaterialPageRoute(builder: (context)=>ClubsPages()) ) ;
                           //MENU
-                          _openMenuOverlay(context) ;
+                          // _openMenuOverlay(context) ;
                         },
                         child: Icon(Icons.menu ,
                         color: Colors.white,
