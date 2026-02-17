@@ -63,6 +63,15 @@ class HomeFeedScreen extends StatefulWidget {
 }
 
 class _HomeFeedScreenState extends State<HomeFeedScreen> {
+  String SelectedCategory = 'All' ;
+  List<Post> SelectedList(){
+      if(SelectedCategory == 'All'){
+        return HomeFeedScreen.posts;
+      } return HomeFeedScreen.posts
+          .where((post) => post.category == SelectedCategory)
+          .toList();
+
+  }
   void _openMenuOverlay(context){
     showGeneralDialog(context: context,
       barrierDismissible: true ,
@@ -158,27 +167,58 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               padding: const EdgeInsets.all(16),
               child: SizedBox(
                 height: 40.0,
-                child: Expanded(
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: const [
-                      FilterChipWidget(text: "All", selected: true),
-                      SizedBox(width: 8),
-                      FilterChipWidget(text: "Clubs", selected: false),
-                      SizedBox(width: 8),
-                      FilterChipWidget(text: "Admin", selected: false),
-                      SizedBox( width: 8.0,) ,
-                      FilterChipWidget(text: "Professors", selected: false) ,
-                      SizedBox(width: 8.0,) ,
-                      FilterChipWidget(text: "Fundraising", selected: false) ,
-                      SizedBox(width: 8.0,) ,
-                      FilterChipWidget(text: "Press", selected: false) ,
-                      SizedBox(width: 8.0,) ,
-                      FilterChipWidget(text: "Alumini", selected: false)
-                  
-                  
-                    ],
-                  ),
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children:  [
+                    FilterChipWidget(text: "All", selected: SelectedCategory =="All" , onTap:(){
+                      setState(() {
+                        SelectedCategory = 'All' ;
+                      });
+                    }
+                    ),
+                    SizedBox(width: 8),
+                    FilterChipWidget(text: "Clubs", selected: SelectedCategory == 'Clubs' , onTap: (){
+                      setState(() {
+                        SelectedCategory = 'Clubs' ;
+                      });
+                      },
+                    ),
+                    SizedBox(width: 8),
+                    FilterChipWidget(text: "Admin", selected: SelectedCategory == 'Admin' , onTap: (){
+                      setState(() {
+                        SelectedCategory ='Admin' ;
+                      });
+                    },
+                    ),
+                    SizedBox( width: 8.0,) ,
+                    FilterChipWidget(text: "Professors", selected: SelectedCategory == 'Professors' , onTap: (){
+                      setState(() {
+                        SelectedCategory = 'Professors' ;
+                      });
+                    },
+                    ) ,
+                    SizedBox(width: 8.0,) ,
+                    FilterChipWidget(text: "Fundraising", selected: SelectedCategory == 'Fundraising' , onTap: (){
+                      setState(() {
+                        SelectedCategory = 'Fundraising' ;
+                      });
+                    },
+                    ) ,
+                    SizedBox(width: 8.0,) ,
+                    FilterChipWidget(text: "Press", selected: SelectedCategory == 'Press' , onTap: (){
+                     setState(() {
+                       SelectedCategory= 'Press' ;
+                     });
+                    },
+                    ) ,
+                    SizedBox(width: 8.0,) ,
+                    FilterChipWidget(text: "Alumini", selected: SelectedCategory == 'Alumini' , onTap: (){
+                      setState(() {
+                        SelectedCategory= 'Alumini' ;
+                      });
+                    },
+                    )
+                  ],
                 ),
               ),
             ),
@@ -186,9 +226,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             // 📄 Feed list
             Expanded(
               child: ListView.builder(
-                itemCount: HomeFeedScreen.posts.length,
+                itemCount: SelectedList().length,
                 itemBuilder: (context, index) {
-                  return PostCard(post: HomeFeedScreen.posts[index]);
+                  return PostCard(post:SelectedList()[index]);
                 },
               ),
             ),
@@ -228,25 +268,33 @@ class Post {
 class FilterChipWidget extends StatelessWidget {
   final String text;
   final bool selected;
+  final VoidCallback onTap;
+
 
   const FilterChipWidget({
     super.key,
     required this.text,
     required this.selected,
+    required this.onTap ,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: selected ? Color(0xFF9E0815) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: selected ? Colors.white : Colors.black,
+    return GestureDetector(
+      onTap: (){
+        onTap() ;
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? Color(0xFF9E0815) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: selected ? Colors.white : Colors.black,
+          ),
         ),
       ),
     );
@@ -345,7 +393,6 @@ class PostCard extends StatelessWidget {
                     Text("${post.comments}"),
                   ],
                 ),
-                const Icon(Icons.share_outlined),
               ],
             ),
           ),
