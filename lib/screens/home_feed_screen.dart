@@ -1,6 +1,7 @@
 import 'package:enstabhouse/screens/club_main_page/club_workshops.dart';
 import 'package:flutter/material.dart';
 import 'package:enstabhouse/screens/club_main_page/club_events.dart';
+import 'club_main_page/club_events.dart';
 
 
 class HomeFeedScreen extends StatefulWidget {
@@ -336,9 +337,14 @@ class PostCard extends StatelessWidget {
               backgroundColor: Color(0xFF9E0815),
               child: Icon(Icons.camera_alt, color: Colors.white),
             ),
-            title: Text(
-              post.author,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+            title: GestureDetector(
+              onTap: (){
+                Navigator.push(context, MaterialPageRoute(builder: (context)=>ClubWorkshops()));
+              },
+              child: Text(
+                post.author,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
             subtitle: Text("${post.category} · ${post.time}"),
           ),
