@@ -1,5 +1,6 @@
+import 'package:enstabhouse/screens/club_main_page/club_workshops.dart';
 import 'package:flutter/material.dart';
-import 'package:enstabhouse/screens/clubs_pages.dart';
+import 'package:enstabhouse/screens/club_main_page/club_events.dart';
 
 
 class HomeFeedScreen extends StatefulWidget {
@@ -144,9 +145,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       SizedBox(width: 30.0) ,
                       GestureDetector(
                         onTap: (){
-                          Navigator.push(context, MaterialPageRoute(builder: (context)=>ClubsPages()) ) ;
+                          // Navigator.push(context, MaterialPageRoute(builder: (context)=>ClubsPages()) ) ;
                           //MENU
                           // _openMenuOverlay(context) ;
+                          Navigator.push(context, MaterialPageRoute(builder: (context) =>ClubWorkshops())) ;
                         },
                         child: Icon(Icons.menu ,
                         color: Colors.white,
