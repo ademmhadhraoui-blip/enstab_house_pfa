@@ -1,14 +1,13 @@
-import 'package:enstabhouse/screens/club_main_page/club_workshops.dart';
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:enstabhouse/screens/club_main_page/club_events.dart';
-import 'club_main_page/club_events.dart';
-
+import 'package:enstabhouse/constants.dart';
+import 'package:enstabhouse/models/post.dart';
 
 class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key});
 
   // 🔹 Fake posts (simulation des publications utilisateurs)
-  static final List<Post> posts = [
+  static const List<Post> posts = [
     Post(
       author: "Photography Club",
       category: "Clubs",
@@ -28,36 +27,40 @@ class HomeFeedScreen extends StatefulWidget {
       comments: 30,
     ),
     Post(
-        author: "Electronix",
-        category: "Clubs",
-        time: "3h",
-        title: "Recruiting",
-        description: "We are recruiting new members",
-        likes: 120,
-        comments: 20
-    ) ,
-    Post(author: "ACM",
-        category: "Clubs",
-        time: "4h",
-        title: "Bootcamp",
-        description:"Introduction to AI" ,
-        likes: 50,
-        comments: 10,
+      author: "Electronix",
+      category: "Clubs",
+      time: "3h",
+      title: "Recruiting",
+      description: "We are recruiting new members",
+      likes: 120,
+      comments: 20,
     ),
-    Post(author: "Professor Bilel",
-        category: "Professors",
-        time: "4h", title: "java course ",
-        description: "Here you find java course ",
-        likes: 20,
-        comments: 10 ,
-    ) ,
-    Post(author: " Ahmed Ahmed ",
-        category: "Fundraising",
-        time: "8h",
-        title: "university decoration  ",
-        description: "we need your help to decorate our university",
-        likes: 20,
-        comments: 10,
+    Post(
+      author: "ACM",
+      category: "Clubs",
+      time: "4h",
+      title: "Bootcamp",
+      description: "Introduction to AI",
+      likes: 50,
+      comments: 10,
+    ),
+    Post(
+      author: "Professor Bilel",
+      category: "Professors",
+      time: "4h",
+      title: "java course",
+      description: "Here you find java course",
+      likes: 20,
+      comments: 10,
+    ),
+    Post(
+      author: "Ahmed Ahmed",
+      category: "Fundraising",
+      time: "8h",
+      title: "university decoration",
+      description: "we need your help to decorate our university",
+      likes: 20,
+      comments: 10,
     ),
   ];
 
@@ -66,21 +69,36 @@ class HomeFeedScreen extends StatefulWidget {
 }
 
 class _HomeFeedScreenState extends State<HomeFeedScreen> {
-  String SelectedCategory = 'All' ;
-  List<Post> SelectedList(){
-      if(SelectedCategory == 'All'){
-        return HomeFeedScreen.posts;
-      } return HomeFeedScreen.posts
-          .where((post) => post.category == SelectedCategory)
-          .toList();
 
+  // ✅ lowerCamelCase
+  String selectedCategory = 'All';
+  bool isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
   }
-  void _openMenuOverlay(context){
-    showGeneralDialog(context: context,
-      barrierDismissible: true ,
-      barrierLabel: "Menu" ,
-      barrierColor: Colors.black.withOpacity(0.4),
-      transitionDuration: const Duration(milliseconds: 300) ,
+
+  List<Post> get filteredPosts {
+    if (selectedCategory == 'All') {
+      return HomeFeedScreen.posts;
+    }
+    return HomeFeedScreen.posts
+        .where((post) => post.category == selectedCategory)
+        .toList();
+  }
+
+  void _openMenuOverlay(BuildContext context) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "Menu",
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (context, animation, secondaryAnimation) {
         return const MenuOverlay();
       },
@@ -95,8 +113,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           child: child,
         );
       },
-
-    ) ;
+    );
   }
 
   @override
@@ -110,56 +127,127 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
-              color: Color(0xFF9E0815),
+              color: kPrimaryColor,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children:  [
-                  Row(
-                    children: [
-                      Text(
-                        "University News",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+                children: [
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: isSearching
+                    // 🔍 SEARCH MODE: full-width text field
+                        ? Row(
+                      key: const ValueKey('search'),
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              isSearching = false;
+                              _searchController.clear();
+                            });
+                          },
+                          child: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                            size: 28,
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 60.0,) ,
-                      GestureDetector(
-                        onTap: () {
-                          //SEARCH
-                        },
-                        child: Icon(Icons.search ,
-                          color: Colors.white ,
-                          size: 30,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            focusNode: _searchFocusNode,
+                            autofocus: true,
+                            style: const TextStyle(color: Colors.white),
+                            cursorColor: Colors.white,
+                            decoration: InputDecoration(
+                              hintText: 'Search here...',
+                              hintStyle: const TextStyle(
+                                color: Colors.white70,
+                              ),
+                              filled: true,
+                              fillColor: Colors.white.withValues(alpha: 0.2),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(25),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                          ),
                         ),
-                      ) ,
-                      SizedBox(width: 30.0) ,
-                      GestureDetector(
-                        onTap: (){
-                          //NOTIFICATIONS
-                        },
-                        child: Icon(Icons.notifications ,
-                        color: Colors.white,
-                        size: 30,),
-                      ) ,
-                      SizedBox(width: 30.0) ,
-                      GestureDetector(
-                        onTap: (){
-                          // Navigator.push(context, MaterialPageRoute(builder: (context)=>ClubsPages()) ) ;
-                          //MENU
-                          // _openMenuOverlay(context) ;
-                          Navigator.push(context, MaterialPageRoute(builder: (context) =>ClubWorkshops())) ;
-                        },
-                        child: Icon(Icons.menu ,
-                        color: Colors.white,
-                        size: 30.0,
+                      ],
+                    )
+                    //  NORMAL MODE: title + icons
+                        : Row(
+                      key: const ValueKey('normal'),
+                      children: [
+                        const Text(
+                          "University News",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      )
-                    ],
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              isSearching = true;
+                            });
+                          },
+                          child: const Icon(
+                            Icons.search,
+                            color: Colors.white,
+                            size: 30,
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        GestureDetector(
+                          onTap: () {
+                            // NOTIFICATIONS
+                          },
+                          child: const Icon(
+                            Icons.notifications,
+                            color: Colors.white,
+                            size: 30,
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        GestureDetector(
+                          onTap: () {
+                            showGeneralDialog(
+                              context: context,
+                              barrierDismissible: true,
+                              barrierLabel: 'Menu',
+                              barrierColor: Colors.transparent,
+                              transitionDuration: const Duration(milliseconds: 300),
+                              pageBuilder: (context, _, __) => const MenuOverlay(),
+                              transitionBuilder: (context, animation, _, child) {
+                                final tween = Tween(
+                                  begin: const Offset(1, 0),
+                                  end: Offset.zero,
+                                ).chain(CurveTween(curve: Curves.easeOutCubic));
+                                return SlideTransition(
+                                  position: animation.drive(tween),
+                                  child: child,
+                                );
+                              },
+                            );
+                          },
+                          child: const Icon(
+                            Icons.menu,
+                            color: Colors.white,
+                            size: 30.0,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  SizedBox(height: 4),
-                  Text(
+                  const SizedBox(height: 4),
+                  const Text(
                     "Campus Community",
                     style: TextStyle(color: Colors.white70),
                   ),
@@ -174,55 +262,20 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 height: 40.0,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
-                  children:  [
-                    FilterChipWidget(text: "All", selected: SelectedCategory =="All" , onTap:(){
-                      setState(() {
-                        SelectedCategory = 'All' ;
-                      });
-                    }
-                    ),
-                    SizedBox(width: 8),
-                    FilterChipWidget(text: "Clubs", selected: SelectedCategory == 'Clubs' , onTap: (){
-                      setState(() {
-                        SelectedCategory = 'Clubs' ;
-                      });
-                      },
-                    ),
-                    SizedBox(width: 8),
-                    FilterChipWidget(text: "Admin", selected: SelectedCategory == 'Admin' , onTap: (){
-                      setState(() {
-                        SelectedCategory ='Admin' ;
-                      });
-                    },
-                    ),
-                    SizedBox( width: 8.0,) ,
-                    FilterChipWidget(text: "Professors", selected: SelectedCategory == 'Professors' , onTap: (){
-                      setState(() {
-                        SelectedCategory = 'Professors' ;
-                      });
-                    },
-                    ) ,
-                    SizedBox(width: 8.0,) ,
-                    FilterChipWidget(text: "Fundraising", selected: SelectedCategory == 'Fundraising' , onTap: (){
-                      setState(() {
-                        SelectedCategory = 'Fundraising' ;
-                      });
-                    },
-                    ) ,
-                    SizedBox(width: 8.0,) ,
-                    FilterChipWidget(text: "Press", selected: SelectedCategory == 'Press' , onTap: (){
-                     setState(() {
-                       SelectedCategory= 'Press' ;
-                     });
-                    },
-                    ) ,
-                    SizedBox(width: 8.0,) ,
-                    FilterChipWidget(text: "Alumini", selected: SelectedCategory == 'Alumini' , onTap: (){
-                      setState(() {
-                        SelectedCategory= 'Alumini' ;
-                      });
-                    },
-                    )
+                  children: [
+                    _buildFilterChip("All"),
+                    const SizedBox(width: 8),
+                    _buildFilterChip("Clubs"),
+                    const SizedBox(width: 8),
+                    _buildFilterChip("Admin"),
+                    const SizedBox(width: 8),
+                    _buildFilterChip("Professors"),
+                    const SizedBox(width: 8),
+                    _buildFilterChip("Fundraising"),
+                    const SizedBox(width: 8),
+                    _buildFilterChip("Press"),
+                    const SizedBox(width: 8),
+                    _buildFilterChip("Alumni"),
                   ],
                 ),
               ),
@@ -231,9 +284,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             // 📄 Feed list
             Expanded(
               child: ListView.builder(
-                itemCount: SelectedList().length,
+                itemCount: filteredPosts.length,
                 itemBuilder: (context, index) {
-                  return PostCard(post:SelectedList()[index]);
+                  return PostCard(post: filteredPosts[index]);
                 },
               ),
             ),
@@ -242,29 +295,19 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
       ),
     );
   }
-}
 
-//
-// 🔹 MODEL POST
-//
-class Post {
-  final String author;
-  final String category;
-  final String time;
-  final String title;
-  final String description;
-  final int likes;
-  final int comments;
-
-  Post({
-    required this.author,
-    required this.category,
-    required this.time,
-    required this.title,
-    required this.description,
-    required this.likes,
-    required this.comments,
-  });
+  // 🔹 Helper pour construire un chip de filtre (évite la répétition)
+  Widget _buildFilterChip(String category) {
+    return FilterChipWidget(
+      text: category,
+      selected: selectedCategory == category,
+      onTap: () {
+        setState(() {
+          selectedCategory = category;
+        });
+      },
+    );
+  }
 }
 
 //
@@ -275,24 +318,21 @@ class FilterChipWidget extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-
   const FilterChipWidget({
     super.key,
     required this.text,
     required this.selected,
-    required this.onTap ,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: (){
-        onTap() ;
-      },
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? Color(0xFF9E0815) : Colors.white,
+          color: selected ? kPrimaryColor : Colors.white,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -307,7 +347,7 @@ class FilterChipWidget extends StatelessWidget {
 }
 
 //
-// 📄 POST CARD (DYNAMIQUE)
+// 📄 POST CARD
 //
 class PostCard extends StatelessWidget {
   final Post post;
@@ -323,7 +363,7 @@ class PostCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
           ),
         ],
@@ -334,12 +374,13 @@ class PostCard extends StatelessWidget {
           // Header
           ListTile(
             leading: const CircleAvatar(
-              backgroundColor: Color(0xFF9E0815),
+              backgroundColor: kPrimaryColor,
               child: Icon(Icons.camera_alt, color: Colors.white),
             ),
             title: GestureDetector(
-              onTap: (){
-                Navigator.push(context, MaterialPageRoute(builder: (context)=>ClubWorkshops()));
+              onTap: () {
+                //  Route nommée
+                Navigator.pushNamed(context, '/club');
               },
               child: Text(
                 post.author,
@@ -411,71 +452,132 @@ class PostCard extends StatelessWidget {
     );
   }
 }
+
+//
+// 📋 MENU OVERLAY
+//
 class MenuOverlay extends StatelessWidget {
   const MenuOverlay({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerRight,
-        child:  FractionallySizedBox(
-        widthFactor: 0.85,
-        child: Material(
-          color: Colors.white,
-          child: SafeArea(
-            child: Column(
-              children: [
-                Container(
-                  width: double.infinity,
-                  height: 200,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF9E0815),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 20 , top: 20),
-                    child: const Text(
-                      "My account",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 20.0,) ,
-
-                Align(
-                  alignment: AlignmentGeometry.topLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text("Personal Information" ,
-                    style: TextStyle(
-                      color: Colors.blueGrey ,
-                      fontSize: 23,
-                    ),
-                    ),
-                  ),
-                ) ,
-                SizedBox(height: 20.0,) ,
-                Container(
-                  height: 60,
-                  width: 300,
-                  padding: EdgeInsets.all(20.0),
-                  decoration: BoxDecoration(
-                    color: Colors.grey,
-                    borderRadius: BorderRadius.circular(15) ,
-                  ),
-                )
-              ],
+    return Stack(
+      children: [
+        // 🫧 Left 15% — blurred background
+        Positioned(
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: MediaQuery.of(context).size.width * 0.15,
+          child: GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.35),
+              ),
             ),
           ),
         ),
-        ),
-        );
 
+        // 📋 Right 85% — menu panel
+        Align(
+          alignment: Alignment.centerRight,
+          child: FractionallySizedBox(
+            widthFactor: 0.85,
+            child: Material(
+              color: Colors.white,
+              child: SafeArea(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 🔴 Header
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(20, 40, 20, 24),
+                      decoration: const BoxDecoration(color: kPrimaryColor),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "My Account",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 26,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // 🔹 Menu items
+                    const SizedBox(height: 8),
+                    _buildMenuItem(
+                      icon: Icons.settings_outlined,
+                      label: "Account Settings",
+                    ),
+                    _buildMenuItem(
+                      icon: Icons.lock_outline,
+                      label: "Privacy & Security",
+                    ),
+                    _buildMenuItem(
+                      icon: Icons.notifications_outlined,
+                      label: "Notifications",
+                    ),
+                    _buildMenuItem(
+                      icon: Icons.palette_outlined,
+                      label: "Appearance",
+                    ),
+                    _buildMenuItem(
+                      icon: Icons.help_outline,
+                      label: "Help & Support",
+                    ),
+
+                    const Divider(height: 32, indent: 16, endIndent: 16),
+
+                    // 🚪 Log Out
+                    _buildMenuItem(
+                      icon: Icons.logout,
+                      label: "Log Out",
+                      color: kPrimaryColor,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String label,
+    Color color = Colors.black87,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: color,
+        ),
+      ),
+      trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+      onTap: () {},
+    );
   }
 }
-
-
-
