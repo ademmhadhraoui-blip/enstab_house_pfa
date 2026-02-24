@@ -2,11 +2,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:enstabhouse/constants.dart';
 import 'package:enstabhouse/models/post.dart';
+import 'package:enstabhouse/screens/settings/account_settings_screen.dart';
+import 'package:enstabhouse/screens/settings/help_support_screen.dart';
 
 class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key});
 
-  // 🔹 Fake posts (simulation des publications utilisateurs)
+
   static const List<Post> posts = [
     Post(
       author: "Photography Club",
@@ -379,7 +381,6 @@ class PostCard extends StatelessWidget {
             ),
             title: GestureDetector(
               onTap: () {
-                //  Route nommée
                 Navigator.pushNamed(context, '/club');
               },
               child: Text(
@@ -491,7 +492,7 @@ class MenuOverlay extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 🔴 Header
+                    // Header
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.fromLTRB(20, 40, 20, 24),
@@ -520,36 +521,44 @@ class MenuOverlay extends StatelessWidget {
                       ),
                     ),
 
-                    // 🔹 Menu items
+                    // Menu items
                     const SizedBox(height: 8),
                     _buildMenuItem(
+                      context: context,
                       icon: Icons.settings_outlined,
                       label: "Account Settings",
+                      destination: const AccountSettingsScreen(),
                     ),
                     _buildMenuItem(
-                      icon: Icons.lock_outline,
-                      label: "Privacy & Security",
-                    ),
-                    _buildMenuItem(
-                      icon: Icons.notifications_outlined,
-                      label: "Notifications",
-                    ),
-                    _buildMenuItem(
-                      icon: Icons.palette_outlined,
-                      label: "Appearance",
-                    ),
-                    _buildMenuItem(
+                      context: context,
                       icon: Icons.help_outline,
                       label: "Help & Support",
+                      destination: const HelpSupportScreen(),
                     ),
 
                     const Divider(height: 32, indent: 16, endIndent: 16),
 
                     // 🚪 Log Out
-                    _buildMenuItem(
-                      icon: Icons.logout,
-                      label: "Log Out",
-                      color: kPrimaryColor,
+                    ListTile(
+                      leading: const Icon(Icons.logout, color: kPrimaryColor),
+                      title: const Text(
+                        "Log Out",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: kPrimaryColor,
+                        ),
+                      ),
+                      trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+                      onTap: () {
+                        // Fermer le menu et vider toute la pile de navigation
+                        // puis aller au login screen
+                        Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          '/login',
+                          (route) => false, // supprime toutes les routes
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -562,9 +571,11 @@ class MenuOverlay extends StatelessWidget {
   }
 
   Widget _buildMenuItem({
+    required BuildContext context,
     required IconData icon,
     required String label,
     Color color = Colors.black87,
+    required Widget destination,
   }) {
     return ListTile(
       leading: Icon(icon, color: color),
@@ -577,7 +588,12 @@ class MenuOverlay extends StatelessWidget {
         ),
       ),
       trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
-      onTap: () {},
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => destination),
+        );
+      },
     );
   }
 }

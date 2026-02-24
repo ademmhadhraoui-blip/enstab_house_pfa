@@ -19,16 +19,8 @@ class HelpSupportScreen extends StatelessWidget {
                   _SectionLabel("FAQ"),
                   const SizedBox(height: 12),
                   _FaqTile(
-                    question: "How do I join a club?",
-                    answer: "Go to the club's page and tap the 'Join' button. The club admin will review your request.",
-                  ),
-                  _FaqTile(
                     question: "How do I reset my password?",
                     answer: "Go to Account Settings → Security → Change Password and follow the steps.",
-                  ),
-                  _FaqTile(
-                    question: "How do I report a post?",
-                    answer: "Tap the three-dot menu on the post and select 'Report'. Our team will review it within 24h.",
                   ),
                   _FaqTile(
                     question: "Can I delete my account?",
@@ -165,7 +157,10 @@ class _ActionTile extends StatelessWidget {
   final VoidCallback onTap;
 
   const _ActionTile({
-    required this.icon, required this.title, required this.subtitle, required this.onTap,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
   });
 
   @override

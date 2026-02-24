@@ -11,10 +11,10 @@ class AccountSettingsScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // 🔴 Header
+            //  Header
             _buildHeader(context, "Account Settings", Icons.manage_accounts_outlined),
 
-            // 📄 Content
+            //  Content
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(20),
@@ -51,9 +51,9 @@ class AccountSettingsScreen extends StatelessWidget {
   }
 }
 
-// ──────────────────────────────────────────────
+//
 // 🔴 Shared header builder
-// ──────────────────────────────────────────────
+//
 Widget _buildHeader(BuildContext context, String title, IconData icon) {
   return Container(
     width: double.infinity,
@@ -82,9 +82,9 @@ Widget _buildHeader(BuildContext context, String title, IconData icon) {
   );
 }
 
-// ──────────────────────────────────────────────
-// 🔹 Section label
-// ──────────────────────────────────────────────
+//
+// Section label
+//
 class _SectionLabel extends StatelessWidget {
   final String text;
   const _SectionLabel(this.text);
@@ -97,9 +97,9 @@ class _SectionLabel extends StatelessWidget {
   }
 }
 
-// ──────────────────────────────────────────────
-// 🔹 Setting field tile
-// ──────────────────────────────────────────────
+//
+//  Setting field tile
+//
 class _SettingField extends StatelessWidget {
   final String label;
   final String value;

@@ -35,7 +35,7 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.grey[100],
       ),
 
-      // 🗺️ Routes nommées — navigation propre
+      //  Routes nommées — navigation propre
       initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginScreen(),

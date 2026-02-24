@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-// 🔹 Couleur primaire ENSTAB — utilisée dans tout le projet
+//  Couleur primaire ENSTAB — utilisée dans tout le projet
 const Color kPrimaryColor = Color(0xFF9E0815);
 const Color kPrimaryDarkColor = Color(0xFF7d1616);
 
-// 🔹 Décoration réutilisable pour les TextFields
+// Décoration réutilisable pour les TextFields
 final kTextFilledDecoration = InputDecoration(
   labelText: "Email",
   labelStyle: const TextStyle(
