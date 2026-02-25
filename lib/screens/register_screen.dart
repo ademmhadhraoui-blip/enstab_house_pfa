@@ -1,6 +1,7 @@
 import 'package:enstabhouse/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:msh_checkbox/msh_checkbox.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -12,7 +13,17 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen>
     with SingleTickerProviderStateMixin {
   bool _isAgreed = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   late AnimationController _controller;
+  final TextEditingController emailController = TextEditingController() ;
+  final TextEditingController passwordController = TextEditingController() ;
+  final TextEditingController confirmPasswordController = TextEditingController() ;
+  final TextEditingController numberController = TextEditingController() ;
+  final TextEditingController majorController =TextEditingController() ;
+  final TextEditingController fullNameController = TextEditingController() ;
+  final _auth = FirebaseAuth.instance ;
+
 
   @override
   void dispose() {
@@ -80,6 +91,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                   ),
                   const SizedBox(height: 30.0),
                   TextField(
+                    controller: fullNameController,
                     decoration: kTextFilledDecoration.copyWith(
                       labelText: "Full Name",
                       prefixIcon: const Icon(Icons.person_2),
@@ -88,6 +100,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                   ),
                   const SizedBox(height: 30.0),
                   TextField(
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
                     decoration: kTextFilledDecoration.copyWith(
                       labelText: "Email",
                       prefixIcon: const Icon(Icons.email),
@@ -96,32 +110,54 @@ class _RegisterScreenState extends State<RegisterScreen>
                   ),
                   const SizedBox(height: 30.0),
                   TextField(
-                    obscureText: true,
+                    controller: passwordController,
+                    obscureText: _obscurePassword,
                     decoration: kTextFilledDecoration.copyWith(
                       labelText: "Password",
                       hintText: "Enter your password",
                       prefixIcon: const Icon(Icons.password_outlined),
-                      suffixIcon: const Icon(
-                        Icons.visibility_off,
-                        color: Colors.grey,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
                       ),
                     ),
                   ),
                   const SizedBox(height: 30.0),
                   TextField(
-                    obscureText: true,
+                    controller: confirmPasswordController,
+                    obscureText: _obscureConfirmPassword,
                     decoration: kTextFilledDecoration.copyWith(
                       labelText: "Password Confirmation",
                       hintText: "Confirm your password",
                       prefixIcon: const Icon(Icons.password_outlined),
-                      suffixIcon: const Icon(
-                        Icons.visibility_off,
-                        color: Colors.grey,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirmPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: Colors.grey,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscureConfirmPassword = !_obscureConfirmPassword;
+                          });
+                        },
                       ),
                     ),
                   ),
                   const SizedBox(height: 30.0),
                   TextField(
+                    controller: numberController ,
+                    keyboardType: TextInputType.number,
                     decoration: kTextFilledDecoration.copyWith(
                       labelText: "Phone Number",
                       hintText: "+216 xx xxx xxx",
@@ -130,6 +166,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                   ),
                   const SizedBox(height: 30.0),
                   TextField(
+                   controller: majorController,
                     decoration: kTextFilledDecoration.copyWith(
                       labelText: "Major",
                       hintText: "Enter your class",
@@ -157,9 +194,12 @@ class _RegisterScreenState extends State<RegisterScreen>
                           },
                         ),
                         const SizedBox(width: 10),
-                        const Text(
-                          "I agree to the Terms of Service and Privacy Policy",
-                          style: TextStyle(color: Colors.grey),
+                        Expanded(
+                          child: const Text(
+                            "I agree to the Terms of Service and Privacy Policy",
+                            softWrap: true,
+                            style: TextStyle(color: Colors.grey),
+                          ),
                         ),
                       ],
                     ),
@@ -168,15 +208,85 @@ class _RegisterScreenState extends State<RegisterScreen>
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {
-                        // ✅ Route nommée
-                        Navigator.pushNamed(context, '/home');
+                      onPressed: () async  {
+                        if(
+                            emailController.text.isEmpty ||
+                            passwordController.text.isEmpty ||
+                            confirmPasswordController.text.isEmpty ||
+                            fullNameController.text.isEmpty ||
+                            numberController.text.isEmpty ||
+                            majorController.text.isEmpty
+                        ){
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Please fill all fields")
+                            )
+                          );
+                          return ;
+                        }
+                        if (!emailController.text.trim().endsWith('@enstab.ucar.tn')) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Email must be in the form: example@enstab.ucar.tn")),
+                          );
+                          return;
+                        }
+                        if (passwordController.text != confirmPasswordController.text) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Passwords do not match")),
+                          );
+                          return;
+                        }
+                        if (!_isAgreed) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("You must agree to terms")),
+                          );
+                          return;
+                        }
+
+                        //_____UserCreation _____
+
+                        try {
+                          final newUser = await _auth
+                              .createUserWithEmailAndPassword(
+                              email: emailController.text,
+                              password: passwordController.text);
+                          if(newUser != null){
+                            Navigator.pushNamed(context, '/home');
+                          }
+                        }on FirebaseAuthException catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(e.message ?? "Registration failed")),
+                          );
+                        }
+
+
                       },
                       child: const Text(
                         "Register",
                         style: TextStyle(fontSize: 16.0),
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 20.0),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "Already have an account? ",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pushNamed(context, '/login');
+                        },
+                        child: const Text(
+                          "Sign In",
+                          style: TextStyle(
+                            color: kPrimaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

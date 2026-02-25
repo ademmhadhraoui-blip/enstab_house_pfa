@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "702249035382",
+    "project_id": "enstabhouse-3ecd4",
+    "storage_bucket": "enstabhouse-3ecd4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:702249035382:android:b6d0c9fd294223ab99a157",
+        "android_client_info": {
+          "package_name": "com.enstabhouse.enstabhouse"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCxCUiWQ2yVtlqPfiDAKm5fCMhzW3Zr5x0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

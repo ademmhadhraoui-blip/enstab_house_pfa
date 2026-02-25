@@ -3,7 +3,7 @@ import 'package:enstabhouse/constants.dart';
 import 'package:enstabhouse/models/event.dart';
 import 'event_detail_screen.dart';
 
-// 🔹 Card pour afficher un événement
+//  Card pour afficher un événement
 class EventWidgetCard extends StatelessWidget {
   const EventWidgetCard({super.key, required this.event});
   final Event event;

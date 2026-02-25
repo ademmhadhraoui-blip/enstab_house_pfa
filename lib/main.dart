@@ -4,8 +4,13 @@ import 'package:enstabhouse/screens/login_screen.dart';
 import 'package:enstabhouse/screens/home_feed_screen.dart';
 import 'package:enstabhouse/screens/register_screen.dart';
 import 'package:enstabhouse/screens/club_main_page/club_main_page.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() => runApp(const MyApp());
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(const MyApp());}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

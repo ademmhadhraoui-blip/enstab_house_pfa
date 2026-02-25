@@ -1,8 +1,28 @@
 import 'package:enstabhouse/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final _auth = FirebaseAuth.instance;
+
+  bool _obscurePassword = true;
+  bool _rememberMe = false;
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,12 +85,21 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 20.0),
+                    // Email field
                     TextField(
-                      decoration: kTextFilledDecoration,
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: kTextFilledDecoration.copyWith(
+                        labelText: "Email",
+                        prefixIcon: const Icon(Icons.email),
+                        hintText: "student@enstab.ucar.tn",
+                      ),
                     ),
                     const SizedBox(height: 16.0),
+                    // Password field with visibility toggle
                     TextField(
-                      obscureText: true,
+                      controller: passwordController,
+                      obscureText: _obscurePassword,
                       decoration: InputDecoration(
                         labelText: "Password",
                         labelStyle: TextStyle(
@@ -80,9 +109,18 @@ class LoginScreen extends StatelessWidget {
                           Icons.password_outlined,
                           color: Colors.grey,
                         ),
-                        suffixIcon: const Icon(
-                          Icons.visibility_off,
-                          color: Colors.grey,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
                         ),
                         hintText: "Enter your password",
                         border: OutlineInputBorder(
@@ -94,8 +132,13 @@ class LoginScreen extends StatelessWidget {
                     Row(
                       children: [
                         Checkbox(
-                          value: false,
-                          onChanged: (v) {},
+                          value: _rememberMe,
+                          activeColor: kPrimaryColor,
+                          onChanged: (v) {
+                            setState(() {
+                              _rememberMe = v ?? false;
+                            });
+                          },
                         ),
                         const Text(
                           "Remember me ?",
@@ -118,9 +161,37 @@ class LoginScreen extends StatelessWidget {
                       width: double.infinity,
                       height: 50.0,
                       child: ElevatedButton(
-                        onPressed: () {
-                          // ✅ Route nommée au lieu de Navigator.push
-                          Navigator.pushNamed(context, '/home');
+                        onPressed: () async {
+                          if (emailController.text.isEmpty ||
+                              passwordController.text.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text("Please fill all fields")),
+                            );
+                            return;
+                          }
+                          if (!emailController.text.trim().endsWith('@enstab.ucar.tn')) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text("Email must be in the form: example@enstab.ucar.tn")),
+                            );
+                            return;
+                          }
+                          try {
+                            final user = await _auth.signInWithEmailAndPassword(
+                              email: emailController.text.trim(),
+                              password: passwordController.text,
+                            );
+                            if (user != null) {
+                              Navigator.pushNamed(context, '/home');
+                            }
+                          } on FirebaseAuthException catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content:
+                                      Text(e.message ?? "Login failed")),
+                            );
+                          }
                         },
                         child: const Text(
                           "Sign In",
@@ -138,7 +209,6 @@ class LoginScreen extends StatelessWidget {
                         ),
                         GestureDetector(
                           onTap: () {
-                            // ✅ Route nommée
                             Navigator.pushNamed(context, '/register');
                           },
                           child: const Text(

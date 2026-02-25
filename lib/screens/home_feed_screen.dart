@@ -4,6 +4,7 @@ import 'package:enstabhouse/constants.dart';
 import 'package:enstabhouse/models/post.dart';
 import 'package:enstabhouse/screens/settings/account_settings_screen.dart';
 import 'package:enstabhouse/screens/settings/help_support_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key});
@@ -72,11 +73,16 @@ class HomeFeedScreen extends StatefulWidget {
 
 class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
-  // ✅ lowerCamelCase
+
   String selectedCategory = 'All';
   bool isSearching = false;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  final _auth = FirebaseAuth.instance ;
+
+  void  getCurrentUser() async {
+    final user = await _auth.currentUser ;
+  }
 
   @override
   void dispose() {

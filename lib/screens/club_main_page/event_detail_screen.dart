@@ -119,7 +119,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               ),
             ),
 
-            // ─── Body ─────────────────────────────────────────────────
+            // Body
             Expanded(
               child: _selectedTab == 'Updates'
                   ? _buildUpdatesList()
