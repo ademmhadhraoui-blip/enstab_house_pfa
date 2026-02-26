@@ -1,5 +1,6 @@
 import 'package:enstabhouse/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:msh_checkbox/msh_checkbox.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -49,6 +50,11 @@ class _RegisterScreenState extends State<RegisterScreen>
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
+    // Pre-fill the phone number prefix
+    numberController.text = '+216';
+    numberController.selection = TextSelection.fromPosition(
+      TextPosition(offset: numberController.text.length),
+    );
   }
 
   @override
@@ -92,6 +98,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                   const SizedBox(height: 30.0),
                   TextField(
                     controller: fullNameController,
+                    autofocus: true,
                     decoration: kTextFilledDecoration.copyWith(
                       labelText: "Full Name",
                       prefixIcon: const Icon(Icons.person_2),
@@ -156,8 +163,29 @@ class _RegisterScreenState extends State<RegisterScreen>
                   ),
                   const SizedBox(height: 30.0),
                   TextField(
-                    controller: numberController ,
-                    keyboardType: TextInputType.number,
+                    controller: numberController,
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [
+                      // Keep '+216' prefix and allow only digits after it
+                      TextInputFormatter.withFunction((oldValue, newValue) {
+                        const prefix = '+216';
+                        // Prevent removing the prefix
+                        if (!newValue.text.startsWith(prefix)) {
+                          return oldValue;
+                        }
+                        // Only allow digits after the prefix
+                        final afterPrefix = newValue.text.substring(prefix.length);
+                        if (afterPrefix.isNotEmpty &&
+                            !RegExp(r'^\d+$').hasMatch(afterPrefix)) {
+                          return oldValue;
+                        }
+                        // Cap at exactly 8 digits after the prefix
+                        if (afterPrefix.length > 8) {
+                          return oldValue;
+                        }
+                        return newValue;
+                      }),
+                    ],
                     decoration: kTextFilledDecoration.copyWith(
                       labelText: "Phone Number",
                       hintText: "+216 xx xxx xxx",
@@ -215,6 +243,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                             confirmPasswordController.text.isEmpty ||
                             fullNameController.text.isEmpty ||
                             numberController.text.isEmpty ||
+                            numberController.text == '+216' ||
                             majorController.text.isEmpty
                         ){
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -222,6 +251,14 @@ class _RegisterScreenState extends State<RegisterScreen>
                             )
                           );
                           return ;
+                        }
+                        // Validate exactly 8 digits after +216
+                        final digits = numberController.text.substring('+216'.length);
+                        if (digits.length != 8) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Phone number must be exactly 8 digits")),
+                          );
+                          return;
                         }
                         if (!emailController.text.trim().endsWith('@enstab.ucar.tn')) {
                           ScaffoldMessenger.of(context).showSnackBar(
