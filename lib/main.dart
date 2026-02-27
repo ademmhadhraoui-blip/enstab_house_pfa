@@ -4,6 +4,7 @@ import 'package:enstabhouse/screens/login_screen.dart';
 import 'package:enstabhouse/screens/home_feed_screen.dart';
 import 'package:enstabhouse/screens/register_screen.dart';
 import 'package:enstabhouse/screens/club_main_page/club_main_page.dart';
+import 'package:enstabhouse/screens/splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 
@@ -41,8 +42,9 @@ class MyApp extends StatelessWidget {
       ),
 
       //  Routes nommées — navigation propre
-      initialRoute: '/login',
+      initialRoute: '/splash',
       routes: {
+        '/splash': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeFeedScreen(),
         '/register': (context) => const RegisterScreen(),

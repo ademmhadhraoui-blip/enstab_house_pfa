@@ -12,23 +12,39 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   bool _isAgreed = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   late AnimationController _controller;
+  late AnimationController _pulseController;
+  late Animation<double> _scaleAnimation;
   final TextEditingController emailController = TextEditingController() ;
   final TextEditingController passwordController = TextEditingController() ;
   final TextEditingController confirmPasswordController = TextEditingController() ;
-  final TextEditingController numberController = TextEditingController() ;
-  final TextEditingController majorController =TextEditingController() ;
-  final TextEditingController fullNameController = TextEditingController() ;
+  final TextEditingController numberController = TextEditingController();
+  final TextEditingController codeController = TextEditingController();
+  final TextEditingController fullNameController = TextEditingController();
+
+  String? _selectedUserType;
+  final List<String> _userTypes = [
+    'Student',
+    'Club',
+    'Visitor',
+    'Professor',
+    'Administration',
+  ];
+  bool get _requiresCode =>
+      _selectedUserType == 'Professor' ||
+      _selectedUserType == 'Club' ||
+      _selectedUserType == 'Administration';
   final _auth = FirebaseAuth.instance ;
 
 
   @override
   void dispose() {
     _controller.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -50,6 +66,13 @@ class _RegisterScreenState extends State<RegisterScreen>
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.1).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
     // Pre-fill the phone number prefix
     numberController.text = '+216';
     numberController.selection = TextSelection.fromPosition(
@@ -70,13 +93,19 @@ class _RegisterScreenState extends State<RegisterScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const CircleAvatar(
-                    radius: 50.0,
-                    backgroundColor: kPrimaryColor,
-                    child: Icon(
-                      Icons.school,
-                      color: Colors.white,
-                      size: 50.0,
+                  Hero(
+                    tag: 'school-icon',
+                    child: ScaleTransition(
+                      scale: _scaleAnimation,
+                      child: const CircleAvatar(
+                        radius: 50.0,
+                        backgroundColor: kPrimaryColor,
+                        child: Icon(
+                          Icons.school,
+                          color: Colors.white,
+                          size: 50.0,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 30.0),
@@ -193,13 +222,37 @@ class _RegisterScreenState extends State<RegisterScreen>
                     ),
                   ),
                   const SizedBox(height: 30.0),
-                  TextField(
-                   controller: majorController,
+                  DropdownButtonFormField<String>(
+                    value: _selectedUserType,
                     decoration: kTextFilledDecoration.copyWith(
-                      labelText: "Major",
-                      hintText: "Enter your class",
+                      labelText: 'User Type',
+                      prefixIcon: const Icon(Icons.badge_outlined),
+                      hintText: 'Select your role',
                     ),
+                    items: _userTypes
+                        .map((type) => DropdownMenuItem(
+                              value: type,
+                              child: Text(type),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedUserType = value;
+                        if (!_requiresCode) codeController.clear();
+                      });
+                    },
                   ),
+                  if (_requiresCode) ...([
+                    const SizedBox(height: 30.0),
+                    TextField(
+                      controller: codeController,
+                      decoration: kTextFilledDecoration.copyWith(
+                        labelText: 'Code',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        hintText: 'Please enter your code',
+                      ),
+                    ),
+                  ]),
                   const SizedBox(height: 20.0),
                   GestureDetector(
                     onTap: _handleTap,
@@ -237,15 +290,26 @@ class _RegisterScreenState extends State<RegisterScreen>
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () async  {
-                        if(
+                        if (_selectedUserType == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please select your user type')),
+                          );
+                          return;
+                        }
+                        if (_requiresCode && codeController.text.trim().isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please enter your code')),
+                          );
+                          return;
+                        }
+                        if (
                             emailController.text.isEmpty ||
                             passwordController.text.isEmpty ||
                             confirmPasswordController.text.isEmpty ||
                             fullNameController.text.isEmpty ||
                             numberController.text.isEmpty ||
-                            numberController.text == '+216' ||
-                            majorController.text.isEmpty
-                        ){
+                            numberController.text == '+216'
+                        ) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text("Please fill all fields")
                             )

@@ -9,7 +9,8 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final _auth = FirebaseAuth.instance;
@@ -17,8 +18,24 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _rememberMe = false;
 
+  late AnimationController _pulseController;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.1).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+  }
+
   @override
   void dispose() {
+    _pulseController.dispose();
     emailController.dispose();
     passwordController.dispose();
     super.dispose();
@@ -58,13 +75,19 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 child: Column(
                   children: [
-                    const CircleAvatar(
-                      radius: 30,
-                      backgroundColor: kPrimaryColor,
-                      child: Icon(
-                        Icons.school,
-                        color: Colors.white,
-                        size: 30,
+                    Hero(
+                      tag: 'school-icon',
+                      child: ScaleTransition(
+                        scale: _scaleAnimation,
+                        child: const CircleAvatar(
+                          radius: 30,
+                          backgroundColor: kPrimaryColor,
+                          child: Icon(
+                            Icons.school,
+                            color: Colors.white,
+                            size: 30,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20.0),
