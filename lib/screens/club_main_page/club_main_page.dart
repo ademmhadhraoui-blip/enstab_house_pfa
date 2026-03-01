@@ -78,6 +78,16 @@ class ClubMainPage extends StatefulWidget {
 
 class _ClubMainPageState extends State<ClubMainPage> {
   String selectedTab = "Feed";
+  bool isVisitor = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map && args['isVisitor'] == true) {
+      isVisitor = true;
+    }
+  }
 
   // 🔹 Construit le body selon le tab sélectionné
   Widget _buildBody() {
@@ -87,7 +97,7 @@ class _ClubMainPageState extends State<ClubMainPage> {
           padding: const EdgeInsets.only(top: 10),
           itemCount: ClubMainPage.events.length,
           itemBuilder: (context, index) {
-            return EventWidgetCard(event: ClubMainPage.events[index]);
+            return EventWidgetCard(event: ClubMainPage.events[index], isVisitor: isVisitor);
           },
         );
       case "Workshops":
@@ -95,7 +105,7 @@ class _ClubMainPageState extends State<ClubMainPage> {
           padding: const EdgeInsets.only(top: 10),
           itemCount: ClubMainPage.workshops.length,
           itemBuilder: (context, index) {
-            return WorkshopCard(workshop: ClubMainPage.workshops[index]);
+            return WorkshopCard(workshop: ClubMainPage.workshops[index], isVisitor: isVisitor);
           },
         );
       default: // "Feed" — affiche les deux
@@ -103,10 +113,10 @@ class _ClubMainPageState extends State<ClubMainPage> {
           padding: const EdgeInsets.only(top: 10),
           children: [
             ...ClubMainPage.events.map(
-              (e) => EventWidgetCard(event: e),
+              (e) => EventWidgetCard(event: e, isVisitor: isVisitor),
             ),
             ...ClubMainPage.workshops.map(
-              (w) => WorkshopCard(workshop: w),
+              (w) => WorkshopCard(workshop: w, isVisitor: isVisitor),
             ),
           ],
         );

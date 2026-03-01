@@ -73,16 +73,13 @@ class HomeFeedScreen extends StatefulWidget {
 
 class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
-
   String selectedCategory = 'All';
   bool isSearching = false;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-  final _auth = FirebaseAuth.instance ;
+  final _auth = FirebaseAuth.instance;
 
-  void  getCurrentUser() async {
-    final user = await _auth.currentUser ;
-  }
+  bool get isVisitor => _auth.currentUser?.isAnonymous ?? false;
 
   @override
   void dispose() {
@@ -92,6 +89,12 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   }
 
   List<Post> get filteredPosts {
+    // Visitors only see club posts (events & workshops)
+    if (isVisitor) {
+      return HomeFeedScreen.posts
+          .where((post) => post.category == 'Clubs')
+          .toList();
+    }
     if (selectedCategory == 'All') {
       return HomeFeedScreen.posts;
     }
@@ -131,7 +134,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // 🔴 Header
+            //  Header
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -142,7 +145,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
                     child: isSearching
-                    // 🔍 SEARCH MODE: full-width text field
+                    //  SEARCH MODE
                         ? Row(
                       key: const ValueKey('search'),
                       children: [
@@ -263,38 +266,63 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               ),
             ),
 
-            // 🟡 Filters
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: SizedBox(
-                height: 40.0,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
+            // Filters — hidden for visitors
+            if (!isVisitor)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: SizedBox(
+                  height: 40.0,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      _buildFilterChip("All"),
+                      const SizedBox(width: 8),
+                      _buildFilterChip("Clubs"),
+                      const SizedBox(width: 8),
+                      _buildFilterChip("Admin"),
+                      const SizedBox(width: 8),
+                      _buildFilterChip("Professors"),
+                      const SizedBox(width: 8),
+                      _buildFilterChip("Fundraising"),
+                      const SizedBox(width: 8),
+                      _buildFilterChip("Press"),
+                      const SizedBox(width: 8),
+                      _buildFilterChip("Alumni"),
+                    ],
+                  ),
+                ),
+              ),
+            // Visitor banner
+            if (isVisitor)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  border: Border.all(color: Colors.orange.shade200),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
                   children: [
-                    _buildFilterChip("All"),
+                    Icon(Icons.info_outline, color: Colors.orange.shade700, size: 18),
                     const SizedBox(width: 8),
-                    _buildFilterChip("Clubs"),
-                    const SizedBox(width: 8),
-                    _buildFilterChip("Admin"),
-                    const SizedBox(width: 8),
-                    _buildFilterChip("Professors"),
-                    const SizedBox(width: 8),
-                    _buildFilterChip("Fundraising"),
-                    const SizedBox(width: 8),
-                    _buildFilterChip("Press"),
-                    const SizedBox(width: 8),
-                    _buildFilterChip("Alumni"),
+                    Expanded(
+                      child: Text(
+                        'You are browsing as a visitor. Register to access all features.',
+                        style: TextStyle(color: Colors.orange.shade800, fontSize: 13),
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ),
 
-            // 📄 Feed list
+            //  Feed list
             Expanded(
               child: ListView.builder(
                 itemCount: filteredPosts.length,
                 itemBuilder: (context, index) {
-                  return PostCard(post: filteredPosts[index]);
+                  return PostCard(post: filteredPosts[index], isVisitor: isVisitor);
                 },
               ),
             ),
@@ -304,7 +332,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     );
   }
 
-  // 🔹 Helper pour construire un chip de filtre (évite la répétition)
+  // Helper pour construire un chip de filtre (évite la répétition)
   Widget _buildFilterChip(String category) {
     return FilterChipWidget(
       text: category,
@@ -319,7 +347,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 }
 
 //
-// 🟡 FILTER CHIP
+//  FILTER CHIP
 //
 class FilterChipWidget extends StatelessWidget {
   final String text;
@@ -355,12 +383,13 @@ class FilterChipWidget extends StatelessWidget {
 }
 
 //
-// 📄 POST CARD
+//  POST CARD
 //
 class PostCard extends StatelessWidget {
   final Post post;
+  final bool isVisitor;
 
-  const PostCard({super.key, required this.post});
+  const PostCard({super.key, required this.post, this.isVisitor = false});
 
   @override
   Widget build(BuildContext context) {
@@ -387,7 +416,7 @@ class PostCard extends StatelessWidget {
             ),
             title: GestureDetector(
               onTap: () {
-                Navigator.pushNamed(context, '/club');
+                Navigator.pushNamed(context, '/club', arguments: {'isVisitor': isVisitor});
               },
               child: Text(
                 post.author,
@@ -461,13 +490,14 @@ class PostCard extends StatelessWidget {
 }
 
 //
-// 📋 MENU OVERLAY
+//  MENU OVERLAY
 //
 class MenuOverlay extends StatelessWidget {
   const MenuOverlay({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final isVisitor = FirebaseAuth.instance.currentUser?.isAnonymous ?? false;
     return Stack(
       children: [
         // 🫧 Left 15% — blurred background
@@ -507,13 +537,26 @@ class MenuOverlay extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            "My Account",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isVisitor ? "Visiting as Guest" : "My Account",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              if (isVisitor)
+                                const Text(
+                                  "Sign in to access all features",
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                            ],
                           ),
                           GestureDetector(
                             onTap: () => Navigator.pop(context),
@@ -529,12 +572,13 @@ class MenuOverlay extends StatelessWidget {
 
                     // Menu items
                     const SizedBox(height: 8),
-                    _buildMenuItem(
-                      context: context,
-                      icon: Icons.settings_outlined,
-                      label: "Account Settings",
-                      destination: const AccountSettingsScreen(),
-                    ),
+                    if (!isVisitor)
+                      _buildMenuItem(
+                        context: context,
+                        icon: Icons.settings_outlined,
+                        label: "Account Settings",
+                        destination: const AccountSettingsScreen(),
+                      ),
                     _buildMenuItem(
                       context: context,
                       icon: Icons.help_outline,
@@ -544,7 +588,7 @@ class MenuOverlay extends StatelessWidget {
 
                     const Divider(height: 32, indent: 16, endIndent: 16),
 
-                    // 🚪 Log Out
+                    //  Log Out
                     ListTile(
                       leading: const Icon(Icons.logout, color: kPrimaryColor),
                       title: const Text(

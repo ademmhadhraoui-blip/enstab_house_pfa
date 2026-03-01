@@ -106,7 +106,7 @@ class _SplashScreenState extends State<SplashScreen>
 
               const SizedBox(height: 36),
 
-              // ── Shimmering title ───────────────────────
+              // ── Shimmering title
               AnimatedBuilder(
                 animation: _shimmerAnimation,
                 builder: (context, child) {
@@ -147,7 +147,7 @@ class _SplashScreenState extends State<SplashScreen>
 
               const SizedBox(height: 10),
 
-              // ── Subtitle ───────────────────────────────
+              // ── Subtitle
               Text(
                 'Your campus community',
                 style: TextStyle(
@@ -159,7 +159,7 @@ class _SplashScreenState extends State<SplashScreen>
 
               const SizedBox(height: 60),
 
-              // ── Loading indicator ──────────────────────
+              // ── Loading indicator
               SizedBox(
                 width: 28,
                 height: 28,

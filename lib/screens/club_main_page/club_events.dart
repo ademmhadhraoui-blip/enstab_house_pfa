@@ -5,8 +5,9 @@ import 'event_detail_screen.dart';
 
 //  Card pour afficher un événement
 class EventWidgetCard extends StatelessWidget {
-  const EventWidgetCard({super.key, required this.event});
+  const EventWidgetCard({super.key, required this.event, this.isVisitor = false});
   final Event event;
+  final bool isVisitor;
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +16,7 @@ class EventWidgetCard extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => EventDetailScreen(event: event),
+            builder: (_) => EventDetailScreen(event: event, isVisitor: isVisitor),
           ),
         );
       },

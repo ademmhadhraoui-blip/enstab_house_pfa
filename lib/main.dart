@@ -1,3 +1,4 @@
+import 'package:enstabhouse/screens/email_verification_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:enstabhouse/constants.dart';
 import 'package:enstabhouse/screens/login_screen.dart';
@@ -49,6 +50,7 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomeFeedScreen(),
         '/register': (context) => const RegisterScreen(),
         '/club': (context) => const ClubMainPage(),
+        '/verifyEmail' : (context) => const EmailVerificationScreen() ,
       },
     );
   }

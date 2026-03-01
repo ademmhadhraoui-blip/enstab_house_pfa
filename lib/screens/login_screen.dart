@@ -56,7 +56,6 @@ class _LoginScreenState extends State<LoginScreen>
               ),
             ),
           ),
-
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
@@ -240,6 +239,51 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 16.0),
+                    Row(
+                      children: [
+                        const Expanded(child: Divider()),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                          child: Text(
+                            "or",
+                            style: TextStyle(color: Colors.grey.shade500),
+                          ),
+                        ),
+                        const Expanded(child: Divider()),
+                      ],
+                    ),
+                    const SizedBox(height: 16.0),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50.0,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.person_outline),
+                        label: const Text(
+                          "Continue as Visitor",
+                          style: TextStyle(fontSize: 15.0),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: kPrimaryColor,
+                          side: const BorderSide(color: kPrimaryColor),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.0),
+                          ),
+                        ),
+                        onPressed: () async {
+                          try {
+                            await FirebaseAuth.instance.signInAnonymously();
+                            Navigator.pushNamed(context, '/home');
+                          } on FirebaseAuthException catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(e.message ?? "Anonymous sign-in failed"),
+                              ),
+                            );
+                          }
+                        },
+                      ),
                     ),
                   ],
                 ),

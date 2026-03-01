@@ -4,7 +4,8 @@ import 'package:enstabhouse/models/event.dart';
 
 class EventDetailScreen extends StatefulWidget {
   final Event event;
-  const EventDetailScreen({super.key, required this.event});
+  final bool isVisitor;
+  const EventDetailScreen({super.key, required this.event, this.isVisitor = false});
 
   @override
   State<EventDetailScreen> createState() => _EventDetailScreenState();
@@ -349,21 +350,33 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   width: double.infinity,
                   height: 40,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: widget.isVisitor ? null : () {},
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: kPrimaryColor,
+                      backgroundColor: widget.isVisitor
+                          ? Colors.grey.shade300
+                          : kPrimaryColor,
+                      disabledBackgroundColor: Colors.grey.shade300,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
-                      'Apply here',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (widget.isVisitor) ...[
+                          const Icon(Icons.lock_outline, color: Colors.grey, size: 16),
+                          const SizedBox(width: 6),
+                        ],
+                        Text(
+                          widget.isVisitor ? 'Sign in to Apply' : 'Apply here',
+                          style: TextStyle(
+                            color: widget.isVisitor ? Colors.grey : Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

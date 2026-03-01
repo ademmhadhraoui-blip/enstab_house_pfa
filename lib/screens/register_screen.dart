@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:msh_checkbox/msh_checkbox.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -30,7 +31,6 @@ class _RegisterScreenState extends State<RegisterScreen>
   final List<String> _userTypes = [
     'Student',
     'Club',
-    'Visitor',
     'Professor',
     'Administration',
   ];
@@ -349,10 +349,26 @@ class _RegisterScreenState extends State<RegisterScreen>
                           final newUser = await _auth
                               .createUserWithEmailAndPassword(
                               email: emailController.text,
-                              password: passwordController.text);
-                          if(newUser != null){
-                            Navigator.pushNamed(context, '/home');
-                          }
+                              password: passwordController.text
+                            );
+
+                          //----- Email Verification
+
+                            await newUser.user!.sendEmailVerification() ;
+                            await FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(newUser.user!.uid)
+                              .set({
+                            'name': fullNameController.text.trim(),
+                            'email': emailController.text.trim(),
+                            'role': _selectedUserType!.toLowerCase(),
+                            'phone': numberController.text.trim(),
+                            'created_at': FieldValue.serverTimestamp(),
+                          });
+
+                          if (!mounted) return;
+                              Navigator.pushNamed(context, "/verifyEmail") ;
+
                         }on FirebaseAuthException catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text(e.message ?? "Registration failed")),

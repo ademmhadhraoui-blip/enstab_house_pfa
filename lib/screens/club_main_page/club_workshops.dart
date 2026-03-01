@@ -5,9 +5,11 @@ import 'package:enstabhouse/models/workshop.dart';
 // 🔹 Card pour afficher un workshop
 class WorkshopCard extends StatelessWidget {
   final Workshop workshop;
+  final bool isVisitor;
   const WorkshopCard({
     super.key,
     required this.workshop,
+    this.isVisitor = false,
   });
 
   @override
@@ -89,19 +91,25 @@ class WorkshopCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 GestureDetector(
+                  onTap: isVisitor ? null : () { /* register logic */ },
                   child: Container(
                     width: 250,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: kPrimaryColor,
+                      color: isVisitor ? Colors.grey.shade300 : kPrimaryColor,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        if (isVisitor)
+                          const Icon(Icons.lock_outline, color: Colors.grey, size: 16),
+                        if (isVisitor) const SizedBox(width: 6),
                         Text(
-                          "Register",
-                          style: TextStyle(color: Colors.white),
+                          isVisitor ? "Sign in to Register" : "Register",
+                          style: TextStyle(
+                            color: isVisitor ? Colors.grey : Colors.white,
+                          ),
                         ),
                       ],
                     ),
