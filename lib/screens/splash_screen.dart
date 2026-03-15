@@ -135,7 +135,7 @@ class _SplashScreenState extends State<SplashScreen>
                   );
                 },
                 child: const Text(
-                  'ENSTABHOUSE',
+                  'ENSTAB HOUSE',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 32,

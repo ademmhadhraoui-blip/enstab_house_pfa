@@ -492,8 +492,15 @@ class PostCard extends StatelessWidget {
 //
 //  MENU OVERLAY
 //
-class MenuOverlay extends StatelessWidget {
+class MenuOverlay extends StatefulWidget {
   const MenuOverlay({super.key});
+
+  @override
+  State<MenuOverlay> createState() => _MenuOverlayState();
+}
+
+class _MenuOverlayState extends State<MenuOverlay> {
+    String logType = 'Log In' ;
 
   @override
   Widget build(BuildContext context) {
@@ -590,15 +597,20 @@ class MenuOverlay extends StatelessWidget {
 
                     //  Log Out
                     ListTile(
-                      leading: const Icon(Icons.logout, color: kPrimaryColor),
-                      title: const Text(
-                        "Log Out",
+                      leading: isVisitor? Icon(Icons.login , color: kPrimaryColor) :Icon(Icons.logout , color: kPrimaryColor) ,
+                      title: isVisitor ? Text(
+                        'Log In',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
                           color: kPrimaryColor,
                         ),
+                      ) : Text('Log out' ,style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: kPrimaryColor,
                       ),
+                      ) ,
                       trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
                       onTap: () {
                         // Fermer le menu et vider toute la pile de navigation

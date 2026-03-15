@@ -45,7 +45,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
               const Icon(Icons.email_outlined, size: 80, color: kPrimaryColor),
               const SizedBox(height: 20),
               const Text(
-                "Vérifiez votre email",
+                "Verify your email",
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
@@ -60,10 +60,10 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   await FirebaseAuth.instance.currentUser!.sendEmailVerification();
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Email renvoyé !")),
+                    const SnackBar(content: Text("Email sent!")),
                   );
                 },
-                child: const Text("Renvoyer l'email"),
+                child: const Text("Resend Email"),
               ),
             ],
           ),
