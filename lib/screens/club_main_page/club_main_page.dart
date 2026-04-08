@@ -1,76 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:enstabhouse/constants.dart';
-import 'package:enstabhouse/models/event.dart';
-import 'package:enstabhouse/models/workshop.dart';
-import 'club_events.dart';
-import 'club_workshops.dart';
+import 'package:enstabhouse/models/post.dart';
+import 'package:enstabhouse/services/post_service.dart';
+import 'package:enstabhouse/widgets/post_card.dart';
 
 class ClubMainPage extends StatefulWidget {
   const ClubMainPage({super.key});
-
-  // 🔹 Données des événements
-  static const List<Event> events = [
-    Event(
-      name: 'BootCamp',
-      description: "Flutter BootCamp for enstab students",
-      date: "18 Feb",
-      place: "Enstab",
-      time: "12 pm",
-    ),
-    Event(
-      name: 'BootCamp',
-      description: "Flutter BootCamp for enstab students",
-      date: "18 Feb",
-      place: "Enstab",
-      time: "12 pm",
-    ),
-    Event(
-      name: 'BootCamp',
-      description: "Flutter BootCamp for enstab students",
-      date: "18 Feb",
-      place: "Enstab",
-      time: "12 pm",
-    ),
-    Event(
-      name: 'BootCamp',
-      description: "Flutter BootCamp for enstab students",
-      date: "18 Feb",
-      place: "Enstab",
-      time: "12 pm",
-    ),
-  ];
-
-  // 🔹 Données des workshops
-  static const List<Workshop> workshops = [
-    Workshop(
-      time: "Feb 8 , 12 pm",
-      description: "welcome to AI Bootcamp where you will learn the fondamentals of ai with the best instructor",
-      place: "Enstab",
-      name: "AI BOOTCAMP",
-      instructor: "Mr Mohamed",
-    ),
-    Workshop(
-      time: "Feb 8 , 12 pm",
-      description: "welcome to AI Bootcamp where you will learn the fondamentals of ai with the best instructor",
-      place: "Enstab",
-      name: "AI BOOTCAMP",
-      instructor: "Mr Mohamed",
-    ),
-    Workshop(
-      time: "Feb 8 , 12 pm",
-      description: "welcome to AI Bootcamp where you will learn the fondamentals of ai with the best instructor",
-      place: "Enstab",
-      name: "AI BOOTCAMP",
-      instructor: "Mr Mohamed",
-    ),
-    Workshop(
-      time: "Feb 8 , 12 pm",
-      description: "welcome to AI Bootcamp where you will learn the fondamentals of ai with the best instructor",
-      place: "Enstab",
-      name: "AI BOOTCAMP",
-      instructor: "Mr Mohamed",
-    ),
-  ];
 
   @override
   State<ClubMainPage> createState() => _ClubMainPageState();
@@ -79,48 +14,53 @@ class ClubMainPage extends StatefulWidget {
 class _ClubMainPageState extends State<ClubMainPage> {
   String selectedTab = "Feed";
   bool isVisitor = false;
+  String clubName = "Club";
+  final PostService _postService = PostService();
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments;
-    if (args is Map && args['isVisitor'] == true) {
-      isVisitor = true;
+    if (args is Map) {
+      if (args['isVisitor'] == true) {
+        isVisitor = true;
+      }
+      if (args['clubName'] != null) {
+        clubName = args['clubName'] as String;
+      }
     }
   }
 
-  // 🔹 Construit le body selon le tab sélectionné
-  Widget _buildBody() {
+  /// Filter posts for this club's tabs
+  List<Post> _filterForTab(List<Post> clubPosts) {
     switch (selectedTab) {
       case "Events":
-        return ListView.builder(
-          padding: const EdgeInsets.only(top: 10),
-          itemCount: ClubMainPage.events.length,
-          itemBuilder: (context, index) {
-            return EventWidgetCard(event: ClubMainPage.events[index], isVisitor: isVisitor);
-          },
-        );
+        return clubPosts.where((p) => p.postType == 'event').toList();
       case "Workshops":
-        return ListView.builder(
-          padding: const EdgeInsets.only(top: 10),
-          itemCount: ClubMainPage.workshops.length,
-          itemBuilder: (context, index) {
-            return WorkshopCard(workshop: ClubMainPage.workshops[index], isVisitor: isVisitor);
-          },
-        );
-      default: // "Feed" — affiche les deux
-        return ListView(
-          padding: const EdgeInsets.only(top: 10),
-          children: [
-            ...ClubMainPage.events.map(
-              (e) => EventWidgetCard(event: e, isVisitor: isVisitor),
-            ),
-            ...ClubMainPage.workshops.map(
-              (w) => WorkshopCard(workshop: w, isVisitor: isVisitor),
-            ),
-          ],
-        );
+        return clubPosts.where((p) => p.postType == 'workshop').toList();
+      default:
+        return clubPosts;
     }
+  }
+
+  Widget _buildEmptyState(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.inbox_outlined, size: 60, color: Colors.grey[400]),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[500],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -146,7 +86,6 @@ class _ClubMainPageState extends State<ClubMainPage> {
                       children: [
                         GestureDetector(
                           onTap: () {
-                            // ✅ Navigator.pop() pour revenir en arrière
                             Navigator.pop(context);
                           },
                           child: const Icon(
@@ -156,18 +95,21 @@ class _ClubMainPageState extends State<ClubMainPage> {
                           ),
                         ),
                         const SizedBox(width: 20),
-                        const Text(
-                          "Photography Club",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 23,
+                        Expanded(
+                          child: Text(
+                            clubName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 23,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 30),
 
-                    // 🟡 Chips de filtrage
+                    //  Chips de filtrage
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -183,8 +125,42 @@ class _ClubMainPageState extends State<ClubMainPage> {
               ),
             ),
 
-            // 📄 Body dynamique
-            Expanded(child: _buildBody()),
+            // 📄 Body dynamique — StreamBuilder from Firestore
+            Expanded(
+              child: StreamBuilder<List<Post>>(
+                stream: _postService.getPosts(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: kPrimaryColor),
+                    );
+                  }
+
+                  final allPosts = snapshot.data ?? [];
+                  final clubPosts = allPosts
+                      .where((post) => post.author == clubName)
+                      .toList();
+                  final tabPosts = _filterForTab(clubPosts);
+
+                  if (tabPosts.isEmpty) {
+                    return _buildEmptyState(selectedTab == "Events"
+                        ? "No events yet"
+                        : selectedTab == "Workshops"
+                            ? "No workshops yet"
+                            : "No posts yet");
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.only(top: 10),
+                    itemCount: tabPosts.length,
+                    itemBuilder: (context, index) {
+                      return PostCard(
+                          post: tabPosts[index], isVisitor: isVisitor);
+                    },
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),

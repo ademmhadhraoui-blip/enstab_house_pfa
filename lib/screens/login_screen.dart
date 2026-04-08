@@ -167,14 +167,16 @@ class _LoginScreenState extends State<LoginScreen>
                           style: TextStyle(color: Colors.grey),
                         ),
                         const Spacer(),
-                        TextButton(
-                          child: const Text(
-                            "Forget Password ?",
-                            style: TextStyle(color: kPrimaryColor),
+                        SafeArea(
+                          child: TextButton(
+                            child: const Text(
+                              "Forget Password ?",
+                              style: TextStyle(color: kPrimaryColor),
+                            ),
+                            onPressed: () {
+                              // mot de passe oublié !
+                            },
                           ),
-                          onPressed: () {
-                            // mot de passe oublié !
-                          },
                         ),
                       ],
                     ),

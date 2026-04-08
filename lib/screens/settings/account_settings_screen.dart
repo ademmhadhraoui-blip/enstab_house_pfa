@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:enstabhouse/constants.dart';
+import 'package:enstabhouse/widgets/settings_shared.dart';
 
 class AccountSettingsScreen extends StatelessWidget {
   const AccountSettingsScreen({super.key});
@@ -11,15 +12,13 @@ class AccountSettingsScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            //  Header
-            _buildHeader(context, "Account Settings", Icons.manage_accounts_outlined),
+            buildSettingsHeader(context, "Account Settings", Icons.manage_accounts_outlined),
 
-            //  Content
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(20),
                 children: [
-                  _SectionLabel("Personal Information"),
+                  SectionLabel("Personal Information"),
                   const SizedBox(height: 12),
                   _SettingField(label: "Full Name", value: "Ahmed Ben Salah", icon: Icons.person_outline),
                   const SizedBox(height: 12),
@@ -27,7 +26,7 @@ class AccountSettingsScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   _SettingField(label: "Student ID", value: "2024-CS-1234", icon: Icons.badge_outlined),
                   const SizedBox(height: 24),
-                  _SectionLabel("Security"),
+                  SectionLabel("Security"),
                   const SizedBox(height: 12),
                   _SettingField(label: "Password", value: "••••••••", icon: Icons.lock_outline, isPassword: true),
                   const SizedBox(height: 32),
@@ -51,55 +50,6 @@ class AccountSettingsScreen extends StatelessWidget {
   }
 }
 
-//
-// 🔴 Shared header builder
-//
-Widget _buildHeader(BuildContext context, String title, IconData icon) {
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-    decoration: const BoxDecoration(color: kPrimaryColor),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Icon(icon, color: Colors.white70, size: 32),
-            const SizedBox(width: 12),
-            Text(
-              title,
-              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
-//
-// Section label
-//
-class _SectionLabel extends StatelessWidget {
-  final String text;
-  const _SectionLabel(this.text);
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text.toUpperCase(),
-      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.2),
-    );
-  }
-}
-
-//
-//  Setting field tile
-//
 class _SettingField extends StatelessWidget {
   final String label;
   final String value;
