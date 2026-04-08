@@ -1,0 +1,242 @@
+@startuml ENSTAB_House_Class_Diagram
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam defaultFontSize 10
+skinparam defaultFontName "Segoe UI"
+skinparam packageStyle rectangle
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #666666
+}
+
+' ============================================================
+'  MODELS
+' ============================================================
+package "models" #FFF3E0 {
+  class Post {
+    - id : String?
+    - authorId : String?
+    - author : String
+    - category : String
+    - time : String
+    - title : String
+    - description : String
+    - likes : int
+    - comments : int
+    - postType : String
+    - eventDate : String?
+    - eventTime : String?
+    - eventPlace : String?
+    - workshopTime : String?
+    - workshopPlace : String?
+    - workshopInstructor : String?
+    - photos : List<String>
+    - documents : List<String>
+    - createdAt : DateTime
+    ==
+    + toMap() : Map
+    + {static} fromMap(data, id) : Post
+    + copyWith({...}) : Post
+    + get timeAgo : String
+  }
+}
+
+' ============================================================
+'  SERVICES
+' ============================================================
+package "services" #E3F2FD {
+  class PostService {
+    - _postsCollection : CollectionReference
+    ==
+    + addPost(post) : Future<void>
+    + getPosts() : Stream<List<Post>>
+    + getPostsByCategory(cat) : Stream<List<Post>>
+    + updatePost(post) : Future<void>
+    + deletePost(id) : Future<void>
+  }
+}
+
+' ============================================================
+'  SCREENS
+' ============================================================
+package "screens" #F3E5F5 {
+
+  class MyApp << StatelessWidget >> {
+    + build(ctx) : Widget
+  }
+
+  class SplashScreen << StatefulWidget >> {
+    - _iconCtrl : AnimationController
+    - _rippleCtrl : AnimationController
+    - _textCtrl : AnimationController
+    - _particleCtrl : AnimationController
+  }
+
+  class LoginScreen << StatefulWidget >> {
+    - emailController : TextEditingController
+    - passwordController : TextEditingController
+    - _auth : FirebaseAuth
+    - _obscurePassword : bool
+    - _rememberMe : bool
+  }
+
+  class RegisterScreen << StatefulWidget >> {
+    - emailController : TextEditingController
+    - passwordController : TextEditingController
+    - confirmPasswordController : TextEditingController
+    - fullNameController : TextEditingController
+    - numberController : TextEditingController
+    - codeController : TextEditingController
+    - _selectedUserType : String?
+    - _auth : FirebaseAuth
+    ==
+    + get _requiresCode : bool
+  }
+
+  class EmailVerificationScreen << StatefulWidget >> {
+    - _timer : Timer?
+  }
+
+  class HomeFeedScreen << StatefulWidget >> {
+    - selectedCategory : String
+    - isSearching : bool
+    - _searchController : TextEditingController
+    - _auth : FirebaseAuth
+    - _postService : PostService
+    - _userRole : String?
+    - _userName : String?
+    ==
+    + get isVisitor : bool
+    + get _canPost : bool
+    - _loadUserRole() : Future<void>
+    - _openMenuOverlay(ctx) : void
+    - _openCreatePost() : void
+    - _filterPosts(posts) : List<Post>
+  }
+
+  class ClubMainPage << StatefulWidget >> {
+    - selectedTab : String
+    - isVisitor : bool
+    - clubName : String
+    - _postService : PostService
+    ==
+    - _filterForTab(posts) : List<Post>
+  }
+
+  class AccountSettingsScreen << StatelessWidget >> {
+    + build(ctx) : Widget
+  }
+
+  class HelpSupportScreen << StatelessWidget >> {
+    + build(ctx) : Widget
+  }
+}
+
+' ============================================================
+'  WIDGETS
+' ============================================================
+package "widgets" #E8F5E9 {
+
+  class PostCard << StatelessWidget >> {
+    + post : Post
+    + isVisitor : bool
+    ==
+    + build(ctx) : Widget
+    + {static} _getDocIcon(ext) : IconData
+    + {static} _getDocColor(ext) : Color
+  }
+
+  class CreatePostSheet << StatefulWidget >> {
+    + authorName : String
+    + userRole : String
+    + onPostCreated : ValueChanged<Post>?
+    - _postType : String
+    - _isSubmitting : bool
+    - _postService : PostService
+    - _selectedPhotos : List<File>
+    - _selectedDocuments : List<File>
+    ==
+    - _pickPhotos() : Future<void>
+    - _pickDocuments() : Future<void>
+    - _submit() : Future<void>
+    + get _categoryForRole : String
+  }
+
+  class FilterChipWidget << StatelessWidget >> {
+    + text : String
+    + selected : bool
+    + onTap : VoidCallback
+  }
+
+  class MenuOverlay << StatefulWidget >> {
+    ==
+    - _buildMenuItem({...}) : Widget
+  }
+
+  class SectionLabel << StatelessWidget >> {
+    + text : String
+  }
+
+  class ActionTile << StatelessWidget >> {
+    + icon : IconData
+    + title : String
+    + subtitle : String
+    + onTap : VoidCallback
+  }
+}
+
+' ============================================================
+'  CONSTANTS
+' ============================================================
+package "constants" #FFF9C4 {
+  class Constants << (C, #FDD835) >> {
+    + {static} kPrimaryColor : Color
+    + {static} kPrimaryDarkColor : Color
+    + {static} kTextFilledDecoration : InputDecoration
+  }
+}
+
+' ============================================================
+'  RELATIONSHIPS
+' ============================================================
+
+' Service ↔ Model
+PostService --> Post : CRUD
+
+' HomeFeedScreen
+HomeFeedScreen --> PostService
+HomeFeedScreen ..> PostCard : builds
+HomeFeedScreen ..> FilterChipWidget : builds
+HomeFeedScreen ..> CreatePostSheet : opens
+HomeFeedScreen ..> MenuOverlay : opens
+
+' ClubMainPage
+ClubMainPage --> PostService
+ClubMainPage ..> PostCard : builds
+
+' PostCard
+PostCard --> Post : displays
+
+' CreatePostSheet
+CreatePostSheet --> PostService
+CreatePostSheet ..> Post : creates
+
+' MenuOverlay → Settings
+MenuOverlay ..> AccountSettingsScreen : navigates
+MenuOverlay ..> HelpSupportScreen : navigates
+
+' Settings → Shared widgets
+AccountSettingsScreen ..> SectionLabel
+HelpSupportScreen ..> SectionLabel
+HelpSupportScreen ..> ActionTile
+
+' MyApp → Routes
+MyApp ..> SplashScreen : /splash
+MyApp ..> LoginScreen : /login
+MyApp ..> HomeFeedScreen : /home
+MyApp ..> RegisterScreen : /register
+MyApp ..> ClubMainPage : /club
+MyApp ..> EmailVerificationScreen : /verifyEmail
+
+@enduml
