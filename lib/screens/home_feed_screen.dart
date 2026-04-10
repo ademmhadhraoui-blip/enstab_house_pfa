@@ -34,7 +34,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     if (isVisitor || _userRole == null) return false;
     return _userRole == 'professor' ||
         _userRole == 'club' ||
-        _userRole == 'administration';
+        _userRole == 'administration' ||
+        _userRole == 'admin';
   }
 
   @override
@@ -101,6 +102,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             _auth.currentUser?.displayName ??
             'User',
         userRole: _userRole ?? '',
+        authorId: _auth.currentUser?.uid,
       ),
     );
   }
@@ -286,12 +288,18 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                     );
                   }
 
-                  return ListView.builder(
+                    return ListView.builder(
                     padding: const EdgeInsets.only(bottom: 80),
                     itemCount: filteredPosts.length,
                     itemBuilder: (context, index) {
                       return PostCard(
-                          post: filteredPosts[index], isVisitor: isVisitor);
+                        post: filteredPosts[index],
+                        isVisitor: isVisitor,
+                        currentUserId: _auth.currentUser?.uid,
+                        currentUserName: _userName ??
+                            _auth.currentUser?.displayName,
+                        currentUserRole: _userRole,
+                      );
                     },
                   );
                 },

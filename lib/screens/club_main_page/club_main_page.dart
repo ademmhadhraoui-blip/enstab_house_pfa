@@ -3,6 +3,7 @@ import 'package:enstabhouse/constants.dart';
 import 'package:enstabhouse/models/post.dart';
 import 'package:enstabhouse/services/post_service.dart';
 import 'package:enstabhouse/widgets/post_card.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ClubMainPage extends StatefulWidget {
   const ClubMainPage({super.key});
@@ -155,7 +156,10 @@ class _ClubMainPageState extends State<ClubMainPage> {
                     itemCount: tabPosts.length,
                     itemBuilder: (context, index) {
                       return PostCard(
-                          post: tabPosts[index], isVisitor: isVisitor);
+                        post: tabPosts[index],
+                        isVisitor: isVisitor,
+                        currentUserId: FirebaseAuth.instance.currentUser?.uid,
+                      );
                     },
                   );
                 },

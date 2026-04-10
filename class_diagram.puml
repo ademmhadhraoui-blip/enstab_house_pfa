@@ -40,6 +40,58 @@ package "models" #FFF3E0 {
     + copyWith({...}) : Post
     + get timeAgo : String
   }
+
+  class AppUser {
+    - uid : String
+    - name : String
+    - email : String
+    - role : String
+    - phone : String
+    - createdAt : DateTime
+    ==
+    + {static} validRoles : List<String>
+    + get isAdmin : bool
+    + get isStudent : bool
+    + get canPost : bool
+    + get canManageAllPosts : bool
+    + get canManageDocuments : bool
+    + get canAssignRoles : bool
+    + get displayRole : String
+    + toMap() : Map
+    + {static} fromMap(data, uid) : AppUser
+    + copyWith({...}) : AppUser
+  }
+
+  enum DocumentType {
+    pfa
+    pfe
+    collaboration
+    ==
+    + toFirestoreString() : String
+    + {static} fromFirestoreString(value) : DocumentType
+    + get displayLabel : String
+  }
+
+  class AcademicDocument {
+    - id : String?
+    - title : String
+    - type : DocumentType
+    - studentName : String?
+    - supervisor : String?
+    - year : String
+    - description : String
+    - fileUrl : String
+    - fileName : String
+    - createdAt : DateTime
+    - updatedAt : DateTime?
+    - uploadedBy : String
+    ==
+    + toMap() : Map
+    + {static} fromMap(data, id) : AcademicDocument
+    + copyWith({...}) : AcademicDocument
+  }
+
+  AcademicDocument --> DocumentType : uses
 }
 
 ' ============================================================
@@ -54,6 +106,30 @@ package "services" #E3F2FD {
     + getPostsByCategory(cat) : Stream<List<Post>>
     + updatePost(post) : Future<void>
     + deletePost(id) : Future<void>
+  }
+
+  class UserService {
+    - _usersCollection : CollectionReference
+    ==
+    + getUserById(uid) : Future<AppUser?>
+    + getCurrentUser() : Future<AppUser?>
+    + currentUserStream() : Stream<AppUser?>
+    + getAllUsers() : Stream<List<AppUser>>
+    + updateUserRole(uid, role) : Future<void>
+    + deleteUser(uid) : Future<void>
+  }
+
+  class DocumentService {
+    - _documentsCollection : CollectionReference
+    - _storage : FirebaseStorage
+    ==
+    + uploadPdf(file, name) : Future<String>
+    + uploadPdfWithProgress(file, name) : UploadTask
+    + addDocument(doc) : Future<void>
+    + getDocuments() : Stream<List<AcademicDocument>>
+    + getDocumentsByType(type) : Stream<List<AcademicDocument>>
+    + updateDocument(doc) : Future<void>
+    + deleteDocument(id, url) : Future<void>
   }
 }
 
@@ -124,12 +200,48 @@ package "screens" #F3E5F5 {
     - _filterForTab(posts) : List<Post>
   }
 
-  class AccountSettingsScreen << StatelessWidget >> {
-    + build(ctx) : Widget
+  class AccountSettingsScreen << StatefulWidget >> {
+    - _auth : FirebaseAuth
+    - _fullName : String
+    - _email : String
+    - _phone : String
+    - _role : String
+    ==
+    - _loadUserData() : Future<void>
+    - _showChangePasswordDialog() : void
+    - _showEditNameDialog() : void
   }
 
   class HelpSupportScreen << StatelessWidget >> {
     + build(ctx) : Widget
+  }
+
+  class DocumentsScreen << StatefulWidget >> {
+    + isAdmin : bool
+    - _documentService : DocumentService
+    - _selectedFilter : DocumentType?
+    - _searchQuery : String
+    ==
+    - _openDocument(doc) : Future<void>
+    - _confirmDelete(doc) : void
+    - _applySearch(docs) : List<AcademicDocument>
+  }
+
+  class UploadDocumentScreen << StatefulWidget >> {
+    - _documentService : DocumentService
+    - _selectedType : DocumentType
+    - _selectedFile : File?
+    - _isUploading : bool
+    - _uploadProgress : double
+    ==
+    - _pickFile() : Future<void>
+    - _submit() : Future<void>
+  }
+
+  class AdminPanelScreen << StatefulWidget >> {
+    - _userService : UserService
+    ==
+    - _showChangeRoleDialog(user) : void
   }
 }
 
@@ -141,7 +253,12 @@ package "widgets" #E8F5E9 {
   class PostCard << StatelessWidget >> {
     + post : Post
     + isVisitor : bool
+    + currentUserId : String?
+    + currentUserName : String?
+    + currentUserRole : String?
     ==
+    + get _isOwner : bool
+    + get _canManage : bool
     + build(ctx) : Widget
     + {static} _getDocIcon(ext) : IconData
     + {static} _getDocColor(ext) : Color
@@ -150,7 +267,9 @@ package "widgets" #E8F5E9 {
   class CreatePostSheet << StatefulWidget >> {
     + authorName : String
     + userRole : String
+    + authorId : String?
     + onPostCreated : ValueChanged<Post>?
+    + existingPost : Post?
     - _postType : String
     - _isSubmitting : bool
     - _postService : PostService
@@ -170,7 +289,11 @@ package "widgets" #E8F5E9 {
   }
 
   class MenuOverlay << StatefulWidget >> {
+    - _userRole : String?
     ==
+    - _loadUserRole() : Future<void>
+    + get _isVisitor : bool
+    + get _isAdmin : bool
     - _buildMenuItem({...}) : Widget
   }
 
@@ -198,11 +321,39 @@ package "constants" #FFF9C4 {
 }
 
 ' ============================================================
+'  FIREBASE (external)
+' ============================================================
+package "Firebase" #FFEBEE {
+  class FirebaseAuth << external >> {
+    + currentUser : User?
+    + signInWithEmailAndPassword() : Future
+    + createUserWithEmailAndPassword() : Future
+    + signInAnonymously() : Future
+  }
+
+  class FirebaseFirestore << external >> {
+    + collection(name) : CollectionReference
+  }
+
+  class FirebaseStorage << external >> {
+    + ref() : Reference
+    + refFromURL(url) : Reference
+  }
+}
+
+' ============================================================
 '  RELATIONSHIPS
 ' ============================================================
 
-' Service ↔ Model
+' Service → Model
 PostService --> Post : CRUD
+UserService --> AppUser : CRUD
+DocumentService --> AcademicDocument : CRUD
+
+' Service → Firebase
+DocumentService --> FirebaseStorage : uploads PDFs
+PostService --> FirebaseFirestore : reads/writes
+UserService --> FirebaseFirestore : reads/writes
 
 ' HomeFeedScreen
 HomeFeedScreen --> PostService
@@ -222,9 +373,22 @@ PostCard --> Post : displays
 CreatePostSheet --> PostService
 CreatePostSheet ..> Post : creates
 
-' MenuOverlay → Settings
+' DocumentsScreen
+DocumentsScreen --> DocumentService
+DocumentsScreen ..> UploadDocumentScreen : navigates
+
+' UploadDocumentScreen
+UploadDocumentScreen --> DocumentService
+
+' AdminPanelScreen
+AdminPanelScreen --> UserService
+AdminPanelScreen ..> DocumentsScreen : navigates
+
+' MenuOverlay → Screens
 MenuOverlay ..> AccountSettingsScreen : navigates
 MenuOverlay ..> HelpSupportScreen : navigates
+MenuOverlay ..> DocumentsScreen : navigates
+MenuOverlay ..> AdminPanelScreen : navigates (admin only)
 
 ' Settings → Shared widgets
 AccountSettingsScreen ..> SectionLabel
@@ -238,5 +402,8 @@ MyApp ..> HomeFeedScreen : /home
 MyApp ..> RegisterScreen : /register
 MyApp ..> ClubMainPage : /club
 MyApp ..> EmailVerificationScreen : /verifyEmail
+MyApp ..> DocumentsScreen : /documents
+MyApp ..> UploadDocumentScreen : /upload-document
+MyApp ..> AdminPanelScreen : /admin
 
 @enduml

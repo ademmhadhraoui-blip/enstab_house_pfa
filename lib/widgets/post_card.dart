@@ -2,16 +2,50 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:enstabhouse/constants.dart';
 import 'package:enstabhouse/models/post.dart';
+import 'package:enstabhouse/services/post_service.dart';
+import 'package:enstabhouse/widgets/create_post_sheet.dart';
 
 /// Card widget that displays a single post in the feed.
 class PostCard extends StatelessWidget {
   final Post post;
   final bool isVisitor;
+  final String? currentUserId;
+  final String? currentUserName;
+  final String? currentUserRole;
 
-  const PostCard({super.key, required this.post, this.isVisitor = false});
+  const PostCard({
+    super.key,
+    required this.post,
+    this.isVisitor = false,
+    this.currentUserId,
+    this.currentUserName,
+    this.currentUserRole,
+  });
+
+  /// Whether the current user is the author of this post.
+  bool get _isOwner {
+    if (currentUserId == null || currentUserId!.isEmpty) return false;
+    // Match by authorId (primary check)
+    if (post.authorId != null && post.authorId!.isNotEmpty && post.authorId == currentUserId) return true;
+    // Fallback: match by author name for old posts without authorId
+    if ((post.authorId == null || post.authorId!.isEmpty) &&
+        currentUserName != null &&
+        currentUserName!.isNotEmpty &&
+        post.author == currentUserName) {
+      return true;
+    }
+    return false;
+  }
+
+  /// Whether the current user can manage (edit/delete) this post.
+  /// Admins can manage ALL posts; owners can manage their own.
+  bool get _canManage => _isOwner || currentUserRole == 'admin';
 
   @override
   Widget build(BuildContext context) {
+    // DEBUG: uncomment to diagnose ownership issues
+    // debugPrint('PostCard: author=${post.author}, authorId=${post.authorId}, currentUserId=$currentUserId, userName=$currentUserName, isOwner=$_isOwner');
+    
     final isEvent = post.postType == 'event';
     final isWorkshop = post.postType == 'workshop';
 
@@ -50,8 +84,11 @@ class PostCard extends StatelessWidget {
               ),
             ),
             subtitle: Text("${post.category} · ${post.timeAgo}"),
-            trailing: (isEvent || isWorkshop)
-                ? _PostTypeBadge(
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isEvent || isWorkshop)
+                  _PostTypeBadge(
                     label: isEvent ? 'Event' : 'Workshop',
                     color: isEvent
                         ? const Color(0xFF1565C0)
@@ -59,8 +96,45 @@ class PostCard extends StatelessWidget {
                     icon: isEvent
                         ? Icons.event_outlined
                         : Icons.build_circle_outlined,
-                  )
-                : null,
+                  ),
+                if (_canManage)
+                  PopupMenuButton<String>(
+                    icon: Icon(Icons.more_vert, color: Colors.grey[600]),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _openEditSheet(context);
+                      } else if (value == 'delete') {
+                        _confirmDelete(context);
+                      }
+                    },
+                    itemBuilder: (_) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit_outlined, size: 20, color: kPrimaryColor),
+                            SizedBox(width: 10),
+                            Text('Modify'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                            SizedBox(width: 10),
+                            Text('Delete', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
           ),
 
           // ── Title
@@ -217,6 +291,71 @@ class PostCard extends StatelessWidget {
                 Text("${post.comments}"),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Open edit bottom sheet
+  void _openEditSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => CreatePostSheet(
+        authorName: post.author,
+        userRole: '',
+        authorId: currentUserId,
+        existingPost: post,
+      ),
+    );
+  }
+
+  // ── Confirm delete dialog
+  void _confirmDelete(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+            SizedBox(width: 10),
+            Text('Delete post'),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to delete this post  ?\n this action is irreversible.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              if (post.id != null) {
+                await PostService().deletePost(post.id!);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Post deleted successfully.'),
+                      backgroundColor: kPrimaryColor,
+                    ),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text('Delete'),
           ),
         ],
       ),

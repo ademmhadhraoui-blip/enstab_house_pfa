@@ -3,9 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:enstabhouse/constants.dart';
 import 'package:enstabhouse/screens/settings/account_settings_screen.dart';
 import 'package:enstabhouse/screens/settings/help_support_screen.dart';
+import 'package:enstabhouse/screens/documents/documents_screen.dart';
+import 'package:enstabhouse/screens/admin/admin_panel_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Full-screen slide-in menu overlay.
+///
+/// Dynamically shows menu items based on the user's role:
+/// - All authenticated users see: Account Settings, Documents, Help & Support
+/// - Admin users additionally see: Admin Panel
+/// - Visitors see: Help & Support, Log In
 class MenuOverlay extends StatefulWidget {
   const MenuOverlay({super.key});
 
@@ -14,10 +22,46 @@ class MenuOverlay extends StatefulWidget {
 }
 
 class _MenuOverlayState extends State<MenuOverlay> {
+  String? _userRole;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserRole();
+  }
+
+  Future<void> _loadUserRole() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null || user.isAnonymous) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      if (doc.exists && mounted) {
+        setState(() {
+          _userRole = (doc.data()?['role'] as String?)?.toLowerCase();
+          _isLoading = false;
+        });
+      } else {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  bool get _isVisitor =>
+      FirebaseAuth.instance.currentUser?.isAnonymous ?? false;
+
+  bool get _isAdmin => _userRole == 'admin';
+
   @override
   Widget build(BuildContext context) {
-    final isVisitor =
-        FirebaseAuth.instance.currentUser?.isAnonymous ?? false;
     return Stack(
       children: [
         // Left 15% — blurred background
@@ -61,7 +105,7 @@ class _MenuOverlayState extends State<MenuOverlay> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                isVisitor
+                                _isVisitor
                                     ? "Visiting as Guest"
                                     : "My Account",
                                 style: const TextStyle(
@@ -70,12 +114,30 @@ class _MenuOverlayState extends State<MenuOverlay> {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              if (isVisitor)
+                              if (_isVisitor)
                                 const Text(
                                   "Sign in to access all features",
                                   style: TextStyle(
                                     color: Colors.white70,
                                     fontSize: 13,
+                                  ),
+                                ),
+                              if (_isAdmin)
+                                Container(
+                                  margin: const EdgeInsets.only(top: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Text(
+                                    '⚙ Administrator',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                             ],
@@ -91,13 +153,36 @@ class _MenuOverlayState extends State<MenuOverlay> {
 
                     // Menu items
                     const SizedBox(height: 8),
-                    if (!isVisitor)
+
+                    // Account Settings — authenticated users only
+                    if (!_isVisitor)
                       _buildMenuItem(
                         context: context,
                         icon: Icons.settings_outlined,
                         label: "Account Settings",
                         destination: const AccountSettingsScreen(),
                       ),
+
+                    // Documents — authenticated users only
+                    if (!_isVisitor)
+                      _buildMenuItem(
+                        context: context,
+                        icon: Icons.folder_outlined,
+                        label: "Documents",
+                        destination: DocumentsScreen(isAdmin: _isAdmin),
+                      ),
+
+                    // Admin Panel — admin only
+                    if (_isAdmin)
+                      _buildMenuItem(
+                        context: context,
+                        icon: Icons.admin_panel_settings_outlined,
+                        label: "Admin Panel",
+                        destination: const AdminPanelScreen(),
+                        color: Colors.red.shade700,
+                      ),
+
+                    // Help & Support — everybody
                     _buildMenuItem(
                       context: context,
                       icon: Icons.help_outline,
@@ -109,10 +194,10 @@ class _MenuOverlayState extends State<MenuOverlay> {
 
                     // Log Out / Log In
                     ListTile(
-                      leading: isVisitor
+                      leading: _isVisitor
                           ? Icon(Icons.login, color: kPrimaryColor)
                           : Icon(Icons.logout, color: kPrimaryColor),
-                      title: isVisitor
+                      title: _isVisitor
                           ? Text(
                               'Log In',
                               style: TextStyle(

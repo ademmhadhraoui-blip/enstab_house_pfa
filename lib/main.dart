@@ -6,6 +6,9 @@ import 'package:enstabhouse/screens/home_feed_screen.dart';
 import 'package:enstabhouse/screens/register_screen.dart';
 import 'package:enstabhouse/screens/club_main_page/club_main_page.dart';
 import 'package:enstabhouse/screens/splash_screen.dart';
+import 'package:enstabhouse/screens/documents/documents_screen.dart';
+import 'package:enstabhouse/screens/documents/upload_document_screen.dart';
+import 'package:enstabhouse/screens/admin/admin_panel_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 
@@ -50,7 +53,10 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomeFeedScreen(),
         '/register': (context) => const RegisterScreen(),
         '/club': (context) => const ClubMainPage(),
-        '/verifyEmail' : (context) => const EmailVerificationScreen() ,
+        '/verifyEmail' : (context) => const EmailVerificationScreen(),
+        '/documents': (context) => const DocumentsScreen(),
+        '/upload-document': (context) => const UploadDocumentScreen(),
+        '/admin': (context) => const AdminPanelScreen(),
       },
     );
   }

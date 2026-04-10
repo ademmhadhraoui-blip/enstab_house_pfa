@@ -6,17 +6,21 @@ import 'package:enstabhouse/services/post_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 
-/// Bottom sheet for creating a new post (normal / event / workshop).
+/// Bottom sheet for creating or editing a post (normal / event / workshop).
 class CreatePostSheet extends StatefulWidget {
   final String authorName;
   final String userRole;
+  final String? authorId;
   final ValueChanged<Post>? onPostCreated;
+  final Post? existingPost;
 
   const CreatePostSheet({
     super.key,
     required this.authorName,
     required this.userRole,
+    this.authorId,
     this.onPostCreated,
+    this.existingPost,
   });
 
   @override
@@ -49,6 +53,26 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
   final ImagePicker _imagePicker = ImagePicker();
   final PostService _postService = PostService();
 
+  bool get _isEditing => widget.existingPost != null;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill fields if editing an existing post
+    final ep = widget.existingPost;
+    if (ep != null) {
+      _postType = ep.postType;
+      _titleCtrl.text = ep.title;
+      _descCtrl.text = ep.description;
+      _eventDateCtrl.text = ep.eventDate ?? '';
+      _eventTimeCtrl.text = ep.eventTime ?? '';
+      _eventPlaceCtrl.text = ep.eventPlace ?? '';
+      _wsTimeCtrl.text = ep.workshopTime ?? '';
+      _wsPlaceCtrl.text = ep.workshopPlace ?? '';
+      _wsInstructorCtrl.text = ep.workshopInstructor ?? '';
+    }
+  }
+
   @override
   void dispose() {
     _titleCtrl.dispose();
@@ -69,6 +93,8 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
       case 'club':
         return 'Clubs';
       case 'administration':
+        return 'Admin';
+      case 'admin':
         return 'Admin';
       default:
         return 'General';
@@ -213,46 +239,93 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
 
     setState(() => _isSubmitting = true);
 
-    final post = Post(
-      author: widget.authorName,
-      category: _categoryForRole,
-      time: '',
-      createdAt: DateTime.now(),
-      title: _titleCtrl.text.trim(),
-      description: _descCtrl.text.trim(),
-      likes: 0,
-      comments: 0,
-      postType: _postType,
-      eventDate: _postType == 'event' ? _eventDateCtrl.text.trim() : null,
-      eventTime: _postType == 'event' ? _eventTimeCtrl.text.trim() : null,
-      eventPlace: _postType == 'event' ? _eventPlaceCtrl.text.trim() : null,
-      workshopTime:
-          _postType == 'workshop' ? _wsTimeCtrl.text.trim() : null,
-      workshopPlace:
-          _postType == 'workshop' ? _wsPlaceCtrl.text.trim() : null,
-      workshopInstructor:
-          _postType == 'workshop' ? _wsInstructorCtrl.text.trim() : null,
-      photos: (_postType == 'event' || _postType == 'workshop')
-          ? _selectedPhotos.map((f) => f.path).toList()
-          : [],
-      documents:
-          _postType == 'normal'
-              ? _selectedDocuments.map((f) => f.path).toList()
-              : [],
-    );
+    if (_isEditing) {
+      // ── UPDATE existing post
+      final updated = widget.existingPost!.copyWith(
+        title: _titleCtrl.text.trim(),
+        description: _descCtrl.text.trim(),
+        postType: _postType,
+        eventDate: _postType == 'event' ? _eventDateCtrl.text.trim() : null,
+        eventTime: _postType == 'event' ? _eventTimeCtrl.text.trim() : null,
+        eventPlace: _postType == 'event' ? _eventPlaceCtrl.text.trim() : null,
+        workshopTime:
+            _postType == 'workshop' ? _wsTimeCtrl.text.trim() : null,
+        workshopPlace:
+            _postType == 'workshop' ? _wsPlaceCtrl.text.trim() : null,
+        workshopInstructor:
+            _postType == 'workshop' ? _wsInstructorCtrl.text.trim() : null,
+        photos: (_postType == 'event' || _postType == 'workshop')
+            ? _selectedPhotos.map((f) => f.path).toList()
+            : [],
+        documents: _postType == 'normal'
+            ? _selectedDocuments.map((f) => f.path).toList()
+            : [],
+      );
 
-    try {
-      await _postService.addPost(post);
-      widget.onPostCreated?.call(post);
-      if (mounted) Navigator.pop(context);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error publishing post: $e')),
-        );
+      try {
+        await _postService.updatePost(updated);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Post modified successfully'),
+              backgroundColor: kPrimaryColor,
+            ),
+          );
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Problem while modifying post $e')),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isSubmitting = false);
       }
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
+    } else {
+      // ── CREATE new post
+      final post = Post(
+        authorId: widget.authorId,
+        author: widget.authorName,
+        category: _categoryForRole,
+        time: '',
+        createdAt: DateTime.now(),
+        title: _titleCtrl.text.trim(),
+        description: _descCtrl.text.trim(),
+        likes: 0,
+        comments: 0,
+        postType: _postType,
+        eventDate: _postType == 'event' ? _eventDateCtrl.text.trim() : null,
+        eventTime: _postType == 'event' ? _eventTimeCtrl.text.trim() : null,
+        eventPlace: _postType == 'event' ? _eventPlaceCtrl.text.trim() : null,
+        workshopTime:
+            _postType == 'workshop' ? _wsTimeCtrl.text.trim() : null,
+        workshopPlace:
+            _postType == 'workshop' ? _wsPlaceCtrl.text.trim() : null,
+        workshopInstructor:
+            _postType == 'workshop' ? _wsInstructorCtrl.text.trim() : null,
+        photos: (_postType == 'event' || _postType == 'workshop')
+            ? _selectedPhotos.map((f) => f.path).toList()
+            : [],
+        documents:
+            _postType == 'normal'
+                ? _selectedDocuments.map((f) => f.path).toList()
+                : [],
+      );
+
+      try {
+        await _postService.addPost(post);
+        widget.onPostCreated?.call(post);
+        if (mounted) Navigator.pop(context);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error publishing post: $e')),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isSubmitting = false);
+      }
     }
   }
 
@@ -660,9 +733,9 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
                           strokeWidth: 2.5,
                         ),
                       )
-                    : const Text(
-                        'Publish Post',
-                        style: TextStyle(
+                    : Text(
+                        _isEditing ? 'Modify post ' : 'Publish Post',
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
