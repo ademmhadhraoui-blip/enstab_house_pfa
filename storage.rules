@@ -1,0 +1,31 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  DOCUMENTS FOLDER — Academic PDFs
+    //
+    //  Security policy:
+    //  - Any authenticated user can READ (download) documents
+    //  - Only ADMIN can WRITE (upload/delete) documents
+    //  - File size limited to 20MB for safety
+    //  - Only PDF content type is allowed for uploads
+    // ═══════════════════════════════════════════════════════════════════════
+
+    match /documents/{allPaths=**} {
+      // Any authenticated user can download documents
+      allow read: if request.auth != null;
+
+      // Only admin can upload or delete documents
+      allow write: if request.auth != null
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        && request.resource.size < 20 * 1024 * 1024  // Max 20MB
+        && request.resource.contentType.matches('application/pdf');
+    }
+
+    // Deny all other paths by default
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

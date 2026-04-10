@@ -1,0 +1,100 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  HELPER FUNCTIONS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /// Get the role of the currently authenticated user from Firestore.
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    /// Check if the current user is an admin.
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == 'admin';
+    }
+
+    /// Check if the request comes from an authenticated user.
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  USERS COLLECTION
+    //
+    //  Security policy:
+    //  - Any authenticated user can READ user profiles
+    //  - A user can CREATE their own document (during registration)
+    //  - A user can UPDATE their own profile ONLY if the 'role' field
+    //    remains unchanged (prevents self-promotion)
+    //  - An ADMIN can update ANY user document, including the 'role' field
+    //  - Only ADMIN can delete user documents
+    // ═══════════════════════════════════════════════════════════════════════
+
+    match /users/{userId} {
+      // Any authenticated user can read any user profile
+      allow read: if isAuthenticated();
+
+      // A user can create their own document only
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+
+      // Self-update: allowed only if the role field is NOT being changed
+      // Admin-update: allowed for any field including role
+      allow update: if isAuthenticated() && (
+        // Case 1: Admin can update any user, including role changes
+        isAdmin() ||
+        // Case 2: User can update their own profile,
+        //         but the role field must remain unchanged
+        (request.auth.uid == userId &&
+         request.resource.data.role == resource.data.role)
+      );
+
+      // Only admins can delete user documents
+      allow delete: if isAdmin();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  POSTS COLLECTION
+    //
+    //  Security policy:
+    //  - Anyone can READ posts (including visitors)
+    //  - Only professor, club, administration, and admin can CREATE posts
+    //  - Only the post author OR admin can UPDATE/DELETE a post
+    // ═══════════════════════════════════════════════════════════════════════
+
+    match /posts/{postId} {
+      // Public read access — visitors can browse posts
+      allow read: if true;
+
+      // Only authorized roles can create posts
+      allow create: if isAuthenticated() &&
+        getUserRole() in ['professor', 'club', 'administration', 'admin'];
+
+      // Only the author or an admin can update a post
+      allow update: if isAuthenticated() && (
+        resource.data.authorId == request.auth.uid || isAdmin()
+      );
+
+      // Only the author or an admin can delete a post
+      allow delete: if isAuthenticated() && (
+        resource.data.authorId == request.auth.uid || isAdmin()
+      );
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  ACADEMIC DOCUMENTS COLLECTION
+    //
+    //  Security policy:
+    //  - Any authenticated user can READ documents
+    //  - Only ADMIN can create, update, or delete documents
+    //  - Students and other roles have STRICT read-only access
+    // ═══════════════════════════════════════════════════════════════════════
+
+    match /academic_documents/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && isAdmin();
+    }
+  }
+}
