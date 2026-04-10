@@ -1,15 +1,16 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:enstabhouse/models/academic_document.dart';
+import 'package:enstabhouse/services/cloudinary_service.dart';
 
 /// Service responsible for academic document management.
 ///
 /// Handles:
-/// - Uploading PDF files to Firebase Storage
+/// - Uploading PDF files to Cloudinary
 /// - Storing/retrieving document metadata in Firestore
 /// - Filtering documents by type
-/// - Deleting documents (both metadata and storage file)
+/// - Deleting documents (metadata only — Cloudinary unsigned presets
+///   do not support client-side deletion)
 ///
 /// **Security note**: All write operations (create, update, delete) are
 /// restricted to admin users via Firestore security rules. Read access
@@ -18,55 +19,39 @@ class DocumentService {
   final CollectionReference _documentsCollection =
       FirebaseFirestore.instance.collection('academic_documents');
 
-  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final CloudinaryService _cloudinary = CloudinaryService();
 
   // ─────────────────────────────────────────────────────────────────────────
-  //  FIREBASE STORAGE — PDF UPLOAD
+  //  CLOUDINARY — PDF UPLOAD
   // ─────────────────────────────────────────────────────────────────────────
 
-  /// Upload a PDF file to Firebase Storage.
+  /// Upload a PDF file to Cloudinary.
   ///
-  /// Files are stored under `documents/{timestamp}_{fileName}` to avoid
-  /// naming collisions. Returns the public download URL.
+  /// Files are stored under the `documents` folder in Cloudinary.
+  /// Returns the public `secure_url`.
   ///
   /// [file] — the local PDF file to upload.
-  /// [fileName] — the original file name for the storage path.
+  /// [fileName] — the original file name.
   ///
-  /// Throws a [FirebaseException] if upload fails.
+  /// Throws an [Exception] if upload fails.
   Future<String> uploadPdf(File file, String fileName) async {
-    // Create a unique path with timestamp to prevent collisions
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final storagePath = 'documents/${timestamp}_$fileName';
-
-    final ref = _storage.ref().child(storagePath);
-
-    // Upload with metadata indicating PDF content type
-    final uploadTask = ref.putFile(
-      file,
-      SettableMetadata(contentType: 'application/pdf'),
-    );
-
-    // Wait for upload to complete
-    final snapshot = await uploadTask;
-
-    // Return the download URL
-    return await snapshot.ref.getDownloadURL();
+    return await _cloudinary.uploadFile(file, fileName, folder: 'documents');
   }
 
   /// Upload a PDF file with progress tracking.
   ///
-  /// Returns an [UploadTask] that can be listened to for progress updates.
-  /// After completion, call [UploadTask.snapshot.ref.getDownloadURL()] to
-  /// get the download URL.
-  UploadTask uploadPdfWithProgress(File file, String fileName) {
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final storagePath = 'documents/${timestamp}_$fileName';
-
-    final ref = _storage.ref().child(storagePath);
-
-    return ref.putFile(
+  /// [onProgress] receives a value between 0.0 and 1.0.
+  /// Returns the `secure_url` of the uploaded file.
+  Future<String> uploadPdfWithProgress(
+    File file,
+    String fileName, {
+    void Function(double progress)? onProgress,
+  }) async {
+    return await _cloudinary.uploadFileWithProgress(
       file,
-      SettableMetadata(contentType: 'application/pdf'),
+      fileName,
+      folder: 'documents',
+      onProgress: onProgress,
     );
   }
 
@@ -125,23 +110,17 @@ class DocumentService {
     await _documentsCollection.doc(doc.id).update(data);
   }
 
-  /// Delete an academic document — removes both the Firestore metadata
-  /// and the file from Firebase Storage.
+  /// Delete an academic document — removes the Firestore metadata.
+  ///
+  /// Note: Cloudinary files uploaded via unsigned presets cannot be deleted
+  /// from the client. Use the Cloudinary dashboard or Admin API (server-side)
+  /// to clean up orphaned files if needed.
   ///
   /// **Admin-only** — enforced by Firestore rules.
   ///
   /// [docId] — the Firestore document ID.
-  /// [fileUrl] — the Firebase Storage download URL of the file to delete.
+  /// [fileUrl] — kept for API compatibility (no longer used for deletion).
   Future<void> deleteDocument(String docId, String fileUrl) async {
-    // Delete the file from Storage
-    try {
-      final ref = _storage.refFromURL(fileUrl);
-      await ref.delete();
-    } catch (_) {
-      // If the file is already deleted or URL is invalid, continue
-      // with deleting the Firestore metadata
-    }
-
     // Delete the metadata from Firestore
     await _documentsCollection.doc(docId).delete();
   }

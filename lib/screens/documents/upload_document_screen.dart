@@ -4,8 +4,8 @@ import 'package:enstabhouse/constants.dart';
 import 'package:enstabhouse/models/academic_document.dart';
 import 'package:enstabhouse/services/document_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 /// Screen for uploading a new academic document (PDF).
 ///
@@ -48,6 +48,9 @@ class _UploadDocumentScreenState extends State<UploadDocumentScreen> {
 
   /// Pick a PDF file from the device.
   Future<void> _pickFile() async {
+    final granted = await _requestPermission(Permission.storage);
+    if (!granted) return;
+
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
@@ -64,7 +67,54 @@ class _UploadDocumentScreenState extends State<UploadDocumentScreen> {
     }
   }
 
-  /// Upload the document: PDF to Storage → metadata to Firestore.
+  /// Request a runtime permission and show a dialog if permanently denied.
+  Future<bool> _requestPermission(Permission permission) async {
+    final status = await permission.request();
+    if (status.isGranted || status.isLimited) return true;
+
+    if (status.isPermanentlyDenied && mounted) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.security, color: kPrimaryColor, size: 24),
+              SizedBox(width: 10),
+              Text('Permission Required'),
+            ],
+          ),
+          content: const Text(
+            'This permission is required to access files. '
+            'Please enable it in your device settings.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                openAppSettings();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kPrimaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text('Open Settings',
+                  style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+    }
+    return false;
+  }
+
+  /// Upload the document: PDF to Cloudinary → metadata to Firestore.
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -81,25 +131,16 @@ class _UploadDocumentScreenState extends State<UploadDocumentScreen> {
     });
 
     try {
-      // Upload PDF with progress tracking
-      final uploadTask = _documentService.uploadPdfWithProgress(
+      // Upload PDF to Cloudinary with progress tracking
+      final downloadUrl = await _documentService.uploadPdfWithProgress(
         _selectedFile!,
         _selectedFileName!,
+        onProgress: (progress) {
+          if (mounted) {
+            setState(() => _uploadProgress = progress);
+          }
+        },
       );
-
-      // Listen to upload progress
-      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
-        if (mounted) {
-          setState(() {
-            _uploadProgress =
-                snapshot.bytesTransferred / snapshot.totalBytes;
-          });
-        }
-      });
-
-      // Wait for upload to complete
-      final snapshot = await uploadTask;
-      final downloadUrl = await snapshot.ref.getDownloadURL();
 
       // Create the document metadata
       final document = AcademicDocument(

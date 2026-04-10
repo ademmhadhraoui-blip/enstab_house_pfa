@@ -45,5 +45,22 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Camera permission -->
+	<key>NSCameraUsageDescription</key>
+	<string>ENSTAB House needs access to your camera to take photos for posts.</string>
+	<!-- Photo Library permission -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ENSTAB House needs access to your photo library to select images for posts.</string>
+	<!-- Photo Library Add permission (saving images) -->
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>ENSTAB House needs permission to save images to your photo library.</string>
+	<!-- Microphone permission (required by camera on iOS) -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>ENSTAB House may need microphone access when recording video.</string>
+	<!-- File/Document access -->
+	<key>UISupportsDocumentBrowser</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 </dict>
 </plist>

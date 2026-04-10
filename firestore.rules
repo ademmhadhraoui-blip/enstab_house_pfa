@@ -72,15 +72,33 @@ service cloud.firestore {
       allow create: if isAuthenticated() &&
         getUserRole() in ['professor', 'club', 'administration', 'admin'];
 
-      // Only the author or an admin can update a post
+      // Author or admin can update any field.
+      // Any authenticated user can update ONLY likes/likedBy (for toggling likes).
       allow update: if isAuthenticated() && (
-        resource.data.authorId == request.auth.uid || isAdmin()
+        resource.data.authorId == request.auth.uid || isAdmin() ||
+        // Allow like toggle: only likedBy and likes fields are changing
+        (request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['likedBy', 'likes', 'comments']))
       );
 
       // Only the author or an admin can delete a post
       allow delete: if isAuthenticated() && (
         resource.data.authorId == request.auth.uid || isAdmin()
       );
+
+      // ── COMMENTS SUBCOLLECTION
+      match /comments/{commentId} {
+        // Anyone can read comments
+        allow read: if true;
+
+        // Any authenticated user can add a comment
+        allow create: if isAuthenticated();
+
+        // Only the comment author or an admin can delete a comment
+        allow delete: if isAuthenticated() && (
+          resource.data.authorId == request.auth.uid || isAdmin()
+        );
+      }
     }
 
     // ═══════════════════════════════════════════════════════════════════════

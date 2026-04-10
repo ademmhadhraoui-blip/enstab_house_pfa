@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:enstabhouse/constants.dart';
 import 'package:enstabhouse/models/post.dart';
 import 'package:enstabhouse/services/post_service.dart';
+import 'package:enstabhouse/services/cloudinary_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 /// Bottom sheet for creating or editing a post (normal / event / workshop).
 class CreatePostSheet extends StatefulWidget {
@@ -52,6 +54,7 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
 
   final ImagePicker _imagePicker = ImagePicker();
   final PostService _postService = PostService();
+  final CloudinaryService _cloudinaryService = CloudinaryService();
 
   bool get _isEditing => widget.existingPost != null;
 
@@ -150,6 +153,8 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
                     style: TextStyle(fontSize: 12)),
                 onTap: () async {
                   Navigator.pop(ctx);
+                  final granted = await _requestPermission(Permission.camera);
+                  if (!granted) return;
                   final image = await _imagePicker.pickImage(
                       source: ImageSource.camera);
                   if (image != null) {
@@ -174,6 +179,8 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
                     style: TextStyle(fontSize: 12)),
                 onTap: () async {
                   Navigator.pop(ctx);
+                  final granted = await _requestPermission(Permission.photos);
+                  if (!granted) return;
                   final images = await _imagePicker.pickMultiImage();
                   if (images.isNotEmpty) {
                     setState(() {
@@ -192,6 +199,8 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
 
   // ── PICK DOCUMENTS
   Future<void> _pickDocuments() async {
+    final granted = await _requestPermission(Permission.storage);
+    if (!granted) return;
     final result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
       type: FileType.custom,
@@ -206,6 +215,53 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
         );
       });
     }
+  }
+
+  /// Request a runtime permission and show a dialog if permanently denied.
+  Future<bool> _requestPermission(Permission permission) async {
+    final status = await permission.request();
+    if (status.isGranted || status.isLimited) return true;
+
+    if (status.isPermanentlyDenied && mounted) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.security, color: kPrimaryColor, size: 24),
+              SizedBox(width: 10),
+              Text('Permission Required'),
+            ],
+          ),
+          content: const Text(
+            'This permission is required to continue. '
+            'Please enable it in your device settings.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                openAppSettings();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kPrimaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text('Open Settings',
+                  style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+    }
+    return false;
   }
 
   Future<void> _submit() async {
@@ -239,30 +295,58 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
 
     setState(() => _isSubmitting = true);
 
-    if (_isEditing) {
-      // ── UPDATE existing post
-      final updated = widget.existingPost!.copyWith(
-        title: _titleCtrl.text.trim(),
-        description: _descCtrl.text.trim(),
-        postType: _postType,
-        eventDate: _postType == 'event' ? _eventDateCtrl.text.trim() : null,
-        eventTime: _postType == 'event' ? _eventTimeCtrl.text.trim() : null,
-        eventPlace: _postType == 'event' ? _eventPlaceCtrl.text.trim() : null,
-        workshopTime:
-            _postType == 'workshop' ? _wsTimeCtrl.text.trim() : null,
-        workshopPlace:
-            _postType == 'workshop' ? _wsPlaceCtrl.text.trim() : null,
-        workshopInstructor:
-            _postType == 'workshop' ? _wsInstructorCtrl.text.trim() : null,
-        photos: (_postType == 'event' || _postType == 'workshop')
-            ? _selectedPhotos.map((f) => f.path).toList()
-            : [],
-        documents: _postType == 'normal'
-            ? _selectedDocuments.map((f) => f.path).toList()
-            : [],
-      );
+    try {
+      // ── Upload files to Cloudinary before saving
+      List<String> photoUrls = [];
+      List<String> documentUrls = [];
 
-      try {
+      if (_postType == 'event' || _postType == 'workshop') {
+        for (final photo in _selectedPhotos) {
+          final fileName = photo.path.split('/').last.split('\\').last;
+          final url = await _cloudinaryService.uploadFile(
+            photo,
+            fileName,
+            folder: 'posts/photos',
+          );
+          photoUrls.add(url);
+        }
+      }
+
+      if (_postType == 'normal') {
+        for (final doc in _selectedDocuments) {
+          final fileName = doc.path.split('/').last.split('\\').last;
+          final url = await _cloudinaryService.uploadFile(
+            doc,
+            fileName,
+            folder: 'posts/documents',
+          );
+          documentUrls.add(url);
+        }
+      }
+
+      if (_isEditing) {
+        // ── UPDATE existing post
+        final updated = widget.existingPost!.copyWith(
+          title: _titleCtrl.text.trim(),
+          description: _descCtrl.text.trim(),
+          postType: _postType,
+          eventDate: _postType == 'event' ? _eventDateCtrl.text.trim() : null,
+          eventTime: _postType == 'event' ? _eventTimeCtrl.text.trim() : null,
+          eventPlace: _postType == 'event' ? _eventPlaceCtrl.text.trim() : null,
+          workshopTime:
+              _postType == 'workshop' ? _wsTimeCtrl.text.trim() : null,
+          workshopPlace:
+              _postType == 'workshop' ? _wsPlaceCtrl.text.trim() : null,
+          workshopInstructor:
+              _postType == 'workshop' ? _wsInstructorCtrl.text.trim() : null,
+          photos: photoUrls.isNotEmpty
+              ? photoUrls
+              : widget.existingPost!.photos,
+          documents: documentUrls.isNotEmpty
+              ? documentUrls
+              : widget.existingPost!.documents,
+        );
+
         await _postService.updatePost(updated);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -273,59 +357,44 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
           );
           Navigator.pop(context);
         }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Problem while modifying post $e')),
-          );
-        }
-      } finally {
-        if (mounted) setState(() => _isSubmitting = false);
-      }
-    } else {
-      // ── CREATE new post
-      final post = Post(
-        authorId: widget.authorId,
-        author: widget.authorName,
-        category: _categoryForRole,
-        time: '',
-        createdAt: DateTime.now(),
-        title: _titleCtrl.text.trim(),
-        description: _descCtrl.text.trim(),
-        likes: 0,
-        comments: 0,
-        postType: _postType,
-        eventDate: _postType == 'event' ? _eventDateCtrl.text.trim() : null,
-        eventTime: _postType == 'event' ? _eventTimeCtrl.text.trim() : null,
-        eventPlace: _postType == 'event' ? _eventPlaceCtrl.text.trim() : null,
-        workshopTime:
-            _postType == 'workshop' ? _wsTimeCtrl.text.trim() : null,
-        workshopPlace:
-            _postType == 'workshop' ? _wsPlaceCtrl.text.trim() : null,
-        workshopInstructor:
-            _postType == 'workshop' ? _wsInstructorCtrl.text.trim() : null,
-        photos: (_postType == 'event' || _postType == 'workshop')
-            ? _selectedPhotos.map((f) => f.path).toList()
-            : [],
-        documents:
-            _postType == 'normal'
-                ? _selectedDocuments.map((f) => f.path).toList()
-                : [],
-      );
+      } else {
+        // ── CREATE new post
+        final post = Post(
+          authorId: widget.authorId,
+          author: widget.authorName,
+          category: _categoryForRole,
+          time: '',
+          createdAt: DateTime.now(),
+          title: _titleCtrl.text.trim(),
+          description: _descCtrl.text.trim(),
+          likes: 0,
+          comments: 0,
+          postType: _postType,
+          eventDate: _postType == 'event' ? _eventDateCtrl.text.trim() : null,
+          eventTime: _postType == 'event' ? _eventTimeCtrl.text.trim() : null,
+          eventPlace: _postType == 'event' ? _eventPlaceCtrl.text.trim() : null,
+          workshopTime:
+              _postType == 'workshop' ? _wsTimeCtrl.text.trim() : null,
+          workshopPlace:
+              _postType == 'workshop' ? _wsPlaceCtrl.text.trim() : null,
+          workshopInstructor:
+              _postType == 'workshop' ? _wsInstructorCtrl.text.trim() : null,
+          photos: photoUrls,
+          documents: documentUrls,
+        );
 
-      try {
         await _postService.addPost(post);
         widget.onPostCreated?.call(post);
         if (mounted) Navigator.pop(context);
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error publishing post: $e')),
-          );
-        }
-      } finally {
-        if (mounted) setState(() => _isSubmitting = false);
       }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 

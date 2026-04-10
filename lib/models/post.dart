@@ -31,6 +31,9 @@ class Post {
   // Document paths (for normal posts)
   final List<String> documents;
 
+  // User IDs who liked this post
+  final List<String> likedBy;
+
   // Timestamp for ordering
   final DateTime createdAt;
 
@@ -53,6 +56,7 @@ class Post {
     this.workshopInstructor,
     this.photos = const [],
     this.documents = const [],
+    this.likedBy = const [],
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -76,6 +80,7 @@ class Post {
       'workshopInstructor': workshopInstructor,
       'photos': photos,
       'documents': documents,
+      'likedBy': likedBy,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -101,6 +106,7 @@ class Post {
       workshopInstructor: data['workshopInstructor'],
       photos: List<String>.from(data['photos'] ?? []),
       documents: List<String>.from(data['documents'] ?? []),
+      likedBy: List<String>.from(data['likedBy'] ?? []),
       createdAt: data['createdAt'] != null
           ? (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
@@ -127,6 +133,7 @@ class Post {
     String? workshopInstructor,
     List<String>? photos,
     List<String>? documents,
+    List<String>? likedBy,
     DateTime? createdAt,
   }) {
     return Post(
@@ -148,6 +155,7 @@ class Post {
       workshopInstructor: workshopInstructor ?? this.workshopInstructor,
       photos: photos ?? this.photos,
       documents: documents ?? this.documents,
+      likedBy: likedBy ?? this.likedBy,
       createdAt: createdAt ?? this.createdAt,
     );
   }
