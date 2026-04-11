@@ -1,4 +1,5 @@
 import 'package:enstabhouse/screens/email_verification_screen.dart';
+import 'package:enstabhouse/screens/grade_calculator_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:enstabhouse/constants.dart';
 import 'package:enstabhouse/screens/login_screen.dart';
@@ -26,7 +27,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'ENSTAB House',
 
-      // 🎨 Thème global — plus besoin de répéter les couleurs partout
+      //  Thème global
       theme: ThemeData(
         primaryColor: kPrimaryColor,
         colorScheme: ColorScheme.fromSeed(
@@ -45,7 +46,7 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.grey[100],
       ),
 
-      //  Routes nommées — navigation propre
+      //  Routes nommées
       initialRoute: '/splash',
       routes: {
         '/splash': (context) => const SplashScreen(),
@@ -57,6 +58,7 @@ class MyApp extends StatelessWidget {
         '/documents': (context) => const DocumentsScreen(),
         '/upload-document': (context) => const UploadDocumentScreen(),
         '/admin': (context) => const AdminPanelScreen(),
+        '/grade-calculator': (context) => const GradeCalculatorScreen(),
       },
     );
   }

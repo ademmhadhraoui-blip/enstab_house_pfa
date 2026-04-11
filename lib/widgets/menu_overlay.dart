@@ -4,6 +4,7 @@ import 'package:enstabhouse/constants.dart';
 import 'package:enstabhouse/screens/settings/account_settings_screen.dart';
 import 'package:enstabhouse/screens/settings/help_support_screen.dart';
 import 'package:enstabhouse/screens/documents/documents_screen.dart';
+import 'package:enstabhouse/screens/grade_calculator_screen.dart';
 import 'package:enstabhouse/screens/admin/admin_panel_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -163,13 +164,21 @@ class _MenuOverlayState extends State<MenuOverlay> {
                         destination: const AccountSettingsScreen(),
                       ),
 
-                    // Documents — authenticated users only
-                    if (!_isVisitor)
-                      _buildMenuItem(
+                    // Documents — everybody
+                    _buildMenuItem(
                         context: context,
                         icon: Icons.folder_outlined,
                         label: "Documents",
                         destination: DocumentsScreen(isAdmin: _isAdmin),
+                      ),
+
+                    // Grade Calculator — authenticated users only
+                    if (!_isVisitor)
+                      _buildMenuItem(
+                        context: context,
+                        icon: Icons.calculate_outlined,
+                        label: "Semester Average Calculator",
+                        destination: const GradeCalculatorScreen(),
                       ),
 
                     // Admin Panel — admin only
