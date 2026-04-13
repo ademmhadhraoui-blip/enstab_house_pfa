@@ -98,13 +98,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                     child: ScaleTransition(
                       scale: _scaleAnimation,
                       child: const CircleAvatar(
-                        radius: 50.0,
-                        backgroundColor: kPrimaryColor,
-                        child: Icon(
-                          Icons.school,
-                          color: Colors.white,
-                          size: 50.0,
-                        ),
+                        radius: 70.0,
+                        backgroundColor: Colors.white,
+                        backgroundImage: AssetImage("images/logo.png"),
                       ),
                     ),
                   ),

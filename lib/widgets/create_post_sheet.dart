@@ -4,9 +4,7 @@ import 'package:enstabhouse/constants.dart';
 import 'package:enstabhouse/models/post.dart';
 import 'package:enstabhouse/services/post_service.dart';
 import 'package:enstabhouse/services/cloudinary_service.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:enstabhouse/services/file_picker_helper.dart';
 
 /// Bottom sheet for creating or editing a post (normal / event / workshop).
 class CreatePostSheet extends StatefulWidget {
@@ -52,7 +50,6 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
   // Documents (for normal posts)
   final List<File> _selectedDocuments = [];
 
-  final ImagePicker _imagePicker = ImagePicker();
   final PostService _postService = PostService();
   final CloudinaryService _cloudinaryService = CloudinaryService();
 
@@ -153,13 +150,19 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
                     style: TextStyle(fontSize: 12)),
                 onTap: () async {
                   Navigator.pop(ctx);
-                  final granted = await _requestPermission(Permission.camera);
-                  if (!granted) return;
-                  final image = await _imagePicker.pickImage(
-                      source: ImageSource.camera);
-                  if (image != null) {
+                  final photo = await FilePickerHelper.takePhotoWithCamera(
+                    context,
+                    onError: (message) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(message)),
+                        );
+                      }
+                    },
+                  );
+                  if (photo != null && mounted) {
                     setState(() {
-                      _selectedPhotos.add(File(image.path));
+                      _selectedPhotos.add(photo);
                     });
                   }
                 },
@@ -179,13 +182,18 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
                     style: TextStyle(fontSize: 12)),
                 onTap: () async {
                   Navigator.pop(ctx);
-                  final granted = await _requestPermission(Permission.photos);
-                  if (!granted) return;
-                  final images = await _imagePicker.pickMultiImage();
-                  if (images.isNotEmpty) {
+                  final photos = await FilePickerHelper.pickPhotosFromGallery(
+                    onError: (message) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(message)),
+                        );
+                      }
+                    },
+                  );
+                  if (photos.isNotEmpty && mounted) {
                     setState(() {
-                      _selectedPhotos
-                          .addAll(images.map((i) => File(i.path)));
+                      _selectedPhotos.addAll(photos);
                     });
                   }
                 },
@@ -198,70 +206,22 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
   }
 
   // ── PICK DOCUMENTS
+  /// No runtime permission needed — FilePicker uses Android's SAF.
   Future<void> _pickDocuments() async {
-    final granted = await _requestPermission(Permission.storage);
-    if (!granted) return;
-    final result = await FilePicker.platform.pickFiles(
-      allowMultiple: true,
-      type: FileType.custom,
-      allowedExtensions: [
-        'pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt'
-      ],
+    final docs = await FilePickerHelper.pickDocuments(
+      onError: (message) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(message)),
+          );
+        }
+      },
     );
-    if (result != null && result.files.isNotEmpty) {
+    if (docs.isNotEmpty && mounted) {
       setState(() {
-        _selectedDocuments.addAll(
-          result.paths.where((p) => p != null).map((p) => File(p!)),
-        );
+        _selectedDocuments.addAll(docs);
       });
     }
-  }
-
-  /// Request a runtime permission and show a dialog if permanently denied.
-  Future<bool> _requestPermission(Permission permission) async {
-    final status = await permission.request();
-    if (status.isGranted || status.isLimited) return true;
-
-    if (status.isPermanentlyDenied && mounted) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Row(
-            children: [
-              Icon(Icons.security, color: kPrimaryColor, size: 24),
-              SizedBox(width: 10),
-              Text('Permission Required'),
-            ],
-          ),
-          content: const Text(
-            'This permission is required to continue. '
-            'Please enable it in your device settings.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                openAppSettings();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kPrimaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: const Text('Open Settings',
-                  style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
-      );
-    }
-    return false;
   }
 
   Future<void> _submit() async {

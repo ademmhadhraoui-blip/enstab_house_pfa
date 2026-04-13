@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:enstabhouse/constants.dart';
 import 'package:enstabhouse/models/academic_document.dart';
 import 'package:enstabhouse/services/document_service.dart';
+import 'package:enstabhouse/services/file_picker_helper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 /// Screen for uploading a new academic document (PDF).
 ///
@@ -47,71 +46,27 @@ class _UploadDocumentScreenState extends State<UploadDocumentScreen> {
   }
 
   /// Pick a PDF file from the device.
+  ///
+  /// **No runtime permission needed** — FilePicker uses Android's SAF
+  /// (Storage Access Framework) which provides scoped access to the
+  /// selected file via a system intent.
   Future<void> _pickFile() async {
-    final granted = await _requestPermission(Permission.storage);
-    if (!granted) return;
-
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
+    final file = await FilePickerHelper.pickPdfFile(
+      onError: (message) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(message)),
+          );
+        }
+      },
     );
 
-    if (result != null && result.files.isNotEmpty) {
-      final path = result.files.single.path;
-      if (path != null) {
-        setState(() {
-          _selectedFile = File(path);
-          _selectedFileName = result.files.single.name;
-        });
-      }
+    if (file != null && mounted) {
+      setState(() {
+        _selectedFile = file;
+        _selectedFileName = file.path.split('/').last.split('\\').last;
+      });
     }
-  }
-
-  /// Request a runtime permission and show a dialog if permanently denied.
-  Future<bool> _requestPermission(Permission permission) async {
-    final status = await permission.request();
-    if (status.isGranted || status.isLimited) return true;
-
-    if (status.isPermanentlyDenied && mounted) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Row(
-            children: [
-              Icon(Icons.security, color: kPrimaryColor, size: 24),
-              SizedBox(width: 10),
-              Text('Permission Required'),
-            ],
-          ),
-          content: const Text(
-            'This permission is required to access files. '
-            'Please enable it in your device settings.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                openAppSettings();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kPrimaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: const Text('Open Settings',
-                  style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
-      );
-    }
-    return false;
   }
 
   /// Upload the document: PDF to Cloudinary → metadata to Firestore.

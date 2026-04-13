@@ -79,13 +79,9 @@ class _LoginScreenState extends State<LoginScreen>
                       child: ScaleTransition(
                         scale: _scaleAnimation,
                         child: const CircleAvatar(
-                          radius: 30,
-                          backgroundColor: kPrimaryColor,
-                          child: Icon(
-                            Icons.school,
-                            color: Colors.white,
-                            size: 30,
-                          ),
+                          radius: 50,
+                          backgroundColor: Colors.white,
+                          backgroundImage: AssetImage("images/logo.png"),
                         ),
                       ),
                     ),
