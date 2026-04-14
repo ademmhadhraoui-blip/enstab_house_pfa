@@ -198,13 +198,24 @@ class _LoginScreenState extends State<LoginScreen>
                             return;
                           }
                           try {
-                            final user = await _auth.signInWithEmailAndPassword(
+                            final userCred = await _auth.signInWithEmailAndPassword(
                               email: emailController.text.trim(),
                               password: passwordController.text,
                             );
-                            if (user != null) {
-                              Navigator.pushNamed(context, '/home');
+                            if (userCred.user != null && !userCred.user!.emailVerified) {
+                              // Resend verification and redirect to verify screen
+                              await userCred.user!.sendEmailVerification();
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Email not verified. A new verification email has been sent."),
+                                ),
+                              );
+                              Navigator.pushReplacementNamed(context, '/verifyEmail');
+                              return;
                             }
+                            if (!mounted) return;
+                            Navigator.pushReplacementNamed(context, '/home');
                           } on FirebaseAuthException catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(

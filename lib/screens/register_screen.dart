@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:msh_checkbox/msh_checkbox.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -17,12 +16,14 @@ class _RegisterScreenState extends State<RegisterScreen>
   bool _isAgreed = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
   late AnimationController _controller;
   late AnimationController _pulseController;
   late Animation<double> _scaleAnimation;
-  final TextEditingController emailController = TextEditingController() ;
-  final TextEditingController passwordController = TextEditingController() ;
-  final TextEditingController confirmPasswordController = TextEditingController() ;
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
   final TextEditingController numberController = TextEditingController();
   final TextEditingController codeController = TextEditingController();
   final TextEditingController fullNameController = TextEditingController();
@@ -38,8 +39,7 @@ class _RegisterScreenState extends State<RegisterScreen>
       _selectedUserType == 'Professor' ||
       _selectedUserType == 'Club' ||
       _selectedUserType == 'Administration';
-  final _auth = FirebaseAuth.instance ;
-
+  final _auth = FirebaseAuth.instance;
 
   @override
   void dispose() {
@@ -78,6 +78,111 @@ class _RegisterScreenState extends State<RegisterScreen>
     numberController.selection = TextSelection.fromPosition(
       TextPosition(offset: numberController.text.length),
     );
+  }
+
+  Future<void> _register() async {
+    if (_selectedUserType == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select your user type')),
+      );
+      return;
+    }
+    if (_requiresCode && codeController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your code')),
+      );
+      return;
+    }
+    if (emailController.text.isEmpty ||
+        passwordController.text.isEmpty ||
+        confirmPasswordController.text.isEmpty ||
+        fullNameController.text.isEmpty ||
+        numberController.text.isEmpty ||
+        numberController.text == '+216') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill all fields")),
+      );
+      return;
+    }
+    // Validate exactly 8 digits after +216
+    final digits = numberController.text.substring('+216'.length);
+    if (digits.length != 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text("Phone number must be exactly 8 digits")),
+      );
+      return;
+    }
+    if (!emailController.text.trim().endsWith('@enstab.ucar.tn')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content:
+                Text("Email must be in the form: example@enstab.ucar.tn")),
+      );
+      return;
+    }
+    if (passwordController.text != confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Passwords do not match")),
+      );
+      return;
+    }
+    if (!_isAgreed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("You must agree to terms")),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final newUser = await _auth.createUserWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text,
+      );
+
+      // Send verification email — NO Firestore document created here
+      await newUser.user!.sendEmailVerification();
+
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(
+        context,
+        "/verifyEmail",
+        arguments: {
+          'name': fullNameController.text.trim(),
+          'email': emailController.text.trim(),
+          'role': _selectedUserType!.toLowerCase(),
+          'phone': numberController.text.trim(),
+        },
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      if (e.code == 'email-already-in-use') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                "This email is already registered. Redirecting to login..."),
+          ),
+        );
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, '/login');
+          }
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? "Registration failed")),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Registration failed: $e")),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -199,7 +304,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                           return oldValue;
                         }
                         // Only allow digits after the prefix
-                        final afterPrefix = newValue.text.substring(prefix.length);
+                        final afterPrefix =
+                            newValue.text.substring(prefix.length);
                         if (afterPrefix.isNotEmpty &&
                             !RegExp(r'^\d+$').hasMatch(afterPrefix)) {
                           return oldValue;
@@ -271,8 +377,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                           },
                         ),
                         const SizedBox(width: 10),
-                        Expanded(
-                          child: const Text(
+                        const Expanded(
+                          child: Text(
                             "I agree to the Terms of Service and Privacy Policy",
                             softWrap: true,
                             style: TextStyle(color: Colors.grey),
@@ -285,98 +391,20 @@ class _RegisterScreenState extends State<RegisterScreen>
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () async  {
-                        if (_selectedUserType == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please select your user type')),
-                          );
-                          return;
-                        }
-                        if (_requiresCode && codeController.text.trim().isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please enter your code')),
-                          );
-                          return;
-                        }
-                        if (
-                            emailController.text.isEmpty ||
-                            passwordController.text.isEmpty ||
-                            confirmPasswordController.text.isEmpty ||
-                            fullNameController.text.isEmpty ||
-                            numberController.text.isEmpty ||
-                            numberController.text == '+216'
-                        ) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Please fill all fields")
+                      onPressed: _isLoading ? null : _register,
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
-                          );
-                          return ;
-                        }
-                        // Validate exactly 8 digits after +216
-                        final digits = numberController.text.substring('+216'.length);
-                        if (digits.length != 8) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Phone number must be exactly 8 digits")),
-                          );
-                          return;
-                        }
-                        if (!emailController.text.trim().endsWith('@enstab.ucar.tn')) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Email must be in the form: example@enstab.ucar.tn")),
-                          );
-                          return;
-                        }
-                        if (passwordController.text != confirmPasswordController.text) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Passwords do not match")),
-                          );
-                          return;
-                        }
-                        if (!_isAgreed) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("You must agree to terms")),
-                          );
-                          return;
-                        }
-
-                        //_____UserCreation _____
-
-                        try {
-                          final newUser = await _auth
-                              .createUserWithEmailAndPassword(
-                              email: emailController.text,
-                              password: passwordController.text
-                            );
-
-                          //----- Email Verification
-
-                            await newUser.user!.sendEmailVerification() ;
-                            await FirebaseFirestore.instance
-                              .collection('users')
-                              .doc(newUser.user!.uid)
-                              .set({
-                            'name': fullNameController.text.trim(),
-                            'email': emailController.text.trim(),
-                            'role': _selectedUserType!.toLowerCase(),
-                            'phone': numberController.text.trim(),
-                            'created_at': FieldValue.serverTimestamp(),
-                          });
-
-                          if (!mounted) return;
-                              Navigator.pushNamed(context, "/verifyEmail") ;
-
-                        }on FirebaseAuthException catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(e.message ?? "Registration failed")),
-                          );
-                        }
-
-
-                      },
-                      child: const Text(
-                        "Register",
-                        style: TextStyle(fontSize: 16.0),
-                      ),
+                          : const Text(
+                              "Register",
+                              style: TextStyle(fontSize: 16.0),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 20.0),
