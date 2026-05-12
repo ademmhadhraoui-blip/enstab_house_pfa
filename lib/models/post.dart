@@ -170,7 +170,7 @@ class Post {
     } else if (difference.inHours < 24) {
       return ' ${difference.inHours} h ago';
     } else if (difference.inDays < 7) {
-      return '${difference.inDays} j ago';
+      return '${difference.inDays} d ago';
     } else {
       return '${(difference.inDays / 7).floor()} w ago';
     }

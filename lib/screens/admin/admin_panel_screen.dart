@@ -190,21 +190,28 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                                 ),
                               ],
                             ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                _RoleCount(
-                                  label: 'Total',
-                                  count: users.length,
-                                  color: kPrimaryColor,
-                                ),
-                                ...roleCounts.entries.map((e) => _RoleCount(
-                                      label: e.key[0].toUpperCase() +
-                                          e.key.substring(1),
-                                      count: e.value,
-                                      color: _roleColor(e.key),
-                                    )),
-                              ],
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                children: [
+                                  _RoleCount(
+                                    label: 'Total',
+                                    count: users.length,
+                                    color: kPrimaryColor,
+                                  ),
+                                  const SizedBox(width: 16),
+                                  ...roleCounts.entries.map((e) => Padding(
+                                        padding: const EdgeInsets.only(right: 16),
+                                        child: _RoleCount(
+                                          label: e.key[0].toUpperCase() +
+                                              e.key.substring(1),
+                                          count: e.value,
+                                          color: _roleColor(e.key),
+                                        ),
+                                      )),
+                                ],
+                              ),
                             ),
                           ),
                           const SizedBox(height: 12),

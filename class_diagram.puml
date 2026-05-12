@@ -1,409 +1,205 @@
-@startuml ENSTAB_House_Class_Diagram
+@startuml
+' ═══════════════════════════════════════════════════════════════
+'  ENSTAB House — UML Class Diagram
+' ═══════════════════════════════════════════════════════════════
 
-skinparam classAttributeIconSize 0
 skinparam shadowing false
-skinparam defaultFontSize 10
-skinparam defaultFontName "Segoe UI"
-skinparam packageStyle rectangle
-skinparam class {
-  BackgroundColor #FFFFFF
-  BorderColor #666666
-}
+skinparam classBackgroundColor #FEFEFE
+skinparam classBorderColor #444444
+skinparam classArrowColor #444444
+skinparam classFontSize 12
+skinparam classAttributeFontSize 11
+skinparam packageBorderColor #9E0815
+skinparam packageFontColor #9E0815
+skinparam packageFontStyle bold
+skinparam ArrowColor #444444
 
-' ============================================================
-'  MODELS
-' ============================================================
-package "models" #FFF3E0 {
-  class Post {
-    - id : String?
-    - authorId : String?
-    - author : String
-    - category : String
-    - time : String
-    - title : String
-    - description : String
-    - likes : int
-    - comments : int
-    - postType : String
-    - eventDate : String?
-    - eventTime : String?
-    - eventPlace : String?
-    - workshopTime : String?
-    - workshopPlace : String?
-    - workshopInstructor : String?
-    - photos : List<String>
-    - documents : List<String>
-    - createdAt : DateTime
-    ==
-    + toMap() : Map
-    + {static} fromMap(data, id) : Post
-    + copyWith({...}) : Post
-    + get timeAgo : String
-  }
+' ═══════════════════════════════════════════════════════════════
+'  PACKAGE: Models
+' ═══════════════════════════════════════════════════════════════
 
-  class AppUser {
-    - uid : String
-    - name : String
-    - email : String
-    - role : String
-    - phone : String
-    - createdAt : DateTime
-    ==
-    + {static} validRoles : List<String>
-    + get isAdmin : bool
-    + get isStudent : bool
-    + get canPost : bool
-    + get canManageAllPosts : bool
-    + get canManageDocuments : bool
-    + get canAssignRoles : bool
-    + get displayRole : String
-    + toMap() : Map
-    + {static} fromMap(data, uid) : AppUser
-    + copyWith({...}) : AppUser
-  }
+package "Models" {
 
   enum DocumentType {
     pfa
     pfe
     collaboration
-    ==
-    + toFirestoreString() : String
-    + {static} fromFirestoreString(value) : DocumentType
-    + get displayLabel : String
+  }
+
+  class AppUser {
+    + uid       : String
+    + name      : String
+    + email     : String
+    + phone     : String
+    + role      : String
+    + createdAt : DateTime
+    --
+    + isAdmin()       : bool
+    + canCreatePost() : bool
+    + displayRole()   : String
+  }
+
+  class Post {
+    + id          : String?
+    + authorId    : String?
+    + author      : String
+    + category    : String
+    + title       : String
+    + description : String
+    + postType    : String
+    + likes       : int
+    + comments    : int
+    + likedBy     : List<String>
+    + photos      : List<String>
+    + documents   : List<String>
+    + eventDate   : String?
+    + eventTime   : String?
+    + eventPlace  : String?
+    + workshopTime        : String?
+    + workshopPlace       : String?
+    + workshopInstructor  : String?
+    + createdAt   : DateTime
+    --
+    + fromFirestore(data : Map) : Post
+    + toMap()       : Map<String, dynamic>
+    + copyWith(...) : Post
+    + timeAgo()     : String
   }
 
   class AcademicDocument {
-    - id : String?
-    - title : String
-    - type : DocumentType
-    - studentName : String?
-    - supervisor : String?
-    - year : String
-    - description : String
-    - fileUrl : String
-    - fileName : String
-    - createdAt : DateTime
-    - updatedAt : DateTime?
-    - uploadedBy : String
-    ==
-    + toMap() : Map
-    + {static} fromMap(data, id) : AcademicDocument
-    + copyWith({...}) : AcademicDocument
+    + id          : String?
+    + title       : String
+    + type        : DocumentType
+    + studentName : String?
+    + supervisor  : String?
+    + year        : String
+    + description : String
+    + fileUrl     : String
+    + fileName    : String
+    + uploadedBy  : String
+    + createdAt   : DateTime
+    --
+    + fromFirestore(data : Map) : AcademicDocument
+    + toMap() : Map<String, dynamic>
   }
 
-  AcademicDocument --> DocumentType : uses
+  class Semester {
+    + id       : String
+    + label    : String
+    + subtitle : String
+    + ues      : List<UE>
+    --
+    + totalMatieres()     : int
+    + totalCoefficients() : double
+  }
+
+  class UE {
+    + nom      : String
+    + matieres : List<Matiere>
+    --
+    + totalCoefficients() : double
+  }
+
+  class Matiere {
+    + nom         : String
+    + coefficient : double
+    + regime      : String
+    --
+    + requiresExamen() : bool
+    + regimeLabel()    : String
+  }
 }
 
-' ============================================================
-'  SERVICES
-' ============================================================
-package "services" #E3F2FD {
-  class PostService {
-    - _postsCollection : CollectionReference
-    ==
-    + addPost(post) : Future<void>
-    + getPosts() : Stream<List<Post>>
-    + getPostsByCategory(cat) : Stream<List<Post>>
-    + updatePost(post) : Future<void>
-    + deletePost(id) : Future<void>
-  }
+' ═══════════════════════════════════════════════════════════════
+'  PACKAGE: Services
+' ═══════════════════════════════════════════════════════════════
 
-  class UserService {
-    - _usersCollection : CollectionReference
-    ==
-    + getUserById(uid) : Future<AppUser?>
-    + getCurrentUser() : Future<AppUser?>
-    + currentUserStream() : Stream<AppUser?>
-    + getAllUsers() : Stream<List<AppUser>>
-    + updateUserRole(uid, role) : Future<void>
-    + deleteUser(uid) : Future<void>
+package "Services" {
+
+  class PostService {
+    - _firestore : FirebaseFirestore
+    --
+    + addPost(post : Post)             : Future<void>
+    + getPosts()                       : Stream<List<Post>>
+    + updatePost(post : Post)          : Future<void>
+    + deletePost(postId : String)      : Future<void>
+    + toggleLike(postId : String, userId : String) : Future<void>
+    + addComment(postId : String, authorId : String, authorName : String, text : String) : Future<void>
+    + getComments(postId : String)     : Stream<List<Map>>
+    + deleteComment(postId : String, commentId : String) : Future<void>
   }
 
   class DocumentService {
-    - _documentsCollection : CollectionReference
-    - _storage : FirebaseStorage
-    ==
-    + uploadPdf(file, name) : Future<String>
-    + uploadPdfWithProgress(file, name) : UploadTask
-    + addDocument(doc) : Future<void>
-    + getDocuments() : Stream<List<AcademicDocument>>
-    + getDocumentsByType(type) : Stream<List<AcademicDocument>>
-    + updateDocument(doc) : Future<void>
-    + deleteDocument(id, url) : Future<void>
+    - _firestore  : FirebaseFirestore
+    - _cloudinary : CloudinaryService
+    --
+    + addDocument(doc : AcademicDocument)              : Future<void>
+    + getDocuments()                                   : Stream<List<AcademicDocument>>
+    + getDocumentsByType(type : DocumentType)          : Stream<List<AcademicDocument>>
+    + deleteDocument(docId : String, fileUrl : String) : Future<void>
+    + uploadPdfWithProgress(file : File, name : String, onProgress : Function) : Future<String>
+  }
+
+  class UserService {
+    - _firestore : FirebaseFirestore
+    --
+    + getAllUsers()                              : Stream<List<AppUser>>
+    + getUserById(uid : String)                 : Future<AppUser?>
+    + updateUserRole(uid : String, role : String) : Future<void>
+  }
+
+  class CloudinaryService {
+    - _cloudName    : String
+    - _uploadPreset : String
+    --
+    + uploadFile(file : File, name : String, folder : String) : Future<String>
+  }
+
+  class GradeCalculatorService {
+    --
+    + {static} calculerNoteMatiere(regime : String, controle : double?, examen : double?) : double?
+    + {static} calculerMoyenneGenerale(ues : List<UE>, notes : Map<String, double?>) : double
+    + {static} calculerResultatsUE(ues : List<UE>, notes : Map<String, double?>) : List<UEResult>
+    + {static} matieresNonValidees(ues : List<UE>, notes : Map<String, double?>) : List<MatiereResult>
+    + {static} validateNote(value : String?) : String?
+  }
+
+  class FilePickerHelper {
+    --
+    + {static} pickPdfFile(onError : Function)             : Future<File?>
+    + {static} pickPhotosFromGallery(onError : Function)   : Future<List<File>>
+    + {static} takePhotoWithCamera(onError : Function)     : Future<File?>
+    + {static} pickDocuments(onError : Function)           : Future<List<File>>
   }
 }
 
-' ============================================================
-'  SCREENS
-' ============================================================
-package "screens" #F3E5F5 {
-
-  class MyApp << StatelessWidget >> {
-    + build(ctx) : Widget
-  }
-
-  class SplashScreen << StatefulWidget >> {
-    - _iconCtrl : AnimationController
-    - _rippleCtrl : AnimationController
-    - _textCtrl : AnimationController
-    - _particleCtrl : AnimationController
-  }
-
-  class LoginScreen << StatefulWidget >> {
-    - emailController : TextEditingController
-    - passwordController : TextEditingController
-    - _auth : FirebaseAuth
-    - _obscurePassword : bool
-    - _rememberMe : bool
-  }
-
-  class RegisterScreen << StatefulWidget >> {
-    - emailController : TextEditingController
-    - passwordController : TextEditingController
-    - confirmPasswordController : TextEditingController
-    - fullNameController : TextEditingController
-    - numberController : TextEditingController
-    - codeController : TextEditingController
-    - _selectedUserType : String?
-    - _auth : FirebaseAuth
-    ==
-    + get _requiresCode : bool
-  }
-
-  class EmailVerificationScreen << StatefulWidget >> {
-    - _timer : Timer?
-  }
-
-  class HomeFeedScreen << StatefulWidget >> {
-    - selectedCategory : String
-    - isSearching : bool
-    - _searchController : TextEditingController
-    - _auth : FirebaseAuth
-    - _postService : PostService
-    - _userRole : String?
-    - _userName : String?
-    ==
-    + get isVisitor : bool
-    + get _canPost : bool
-    - _loadUserRole() : Future<void>
-    - _openMenuOverlay(ctx) : void
-    - _openCreatePost() : void
-    - _filterPosts(posts) : List<Post>
-  }
-
-  class ClubMainPage << StatefulWidget >> {
-    - selectedTab : String
-    - isVisitor : bool
-    - clubName : String
-    - _postService : PostService
-    ==
-    - _filterForTab(posts) : List<Post>
-  }
-
-  class AccountSettingsScreen << StatefulWidget >> {
-    - _auth : FirebaseAuth
-    - _fullName : String
-    - _email : String
-    - _phone : String
-    - _role : String
-    ==
-    - _loadUserData() : Future<void>
-    - _showChangePasswordDialog() : void
-    - _showEditNameDialog() : void
-  }
-
-  class HelpSupportScreen << StatelessWidget >> {
-    + build(ctx) : Widget
-  }
-
-  class DocumentsScreen << StatefulWidget >> {
-    + isAdmin : bool
-    - _documentService : DocumentService
-    - _selectedFilter : DocumentType?
-    - _searchQuery : String
-    ==
-    - _openDocument(doc) : Future<void>
-    - _confirmDelete(doc) : void
-    - _applySearch(docs) : List<AcademicDocument>
-  }
-
-  class UploadDocumentScreen << StatefulWidget >> {
-    - _documentService : DocumentService
-    - _selectedType : DocumentType
-    - _selectedFile : File?
-    - _isUploading : bool
-    - _uploadProgress : double
-    ==
-    - _pickFile() : Future<void>
-    - _submit() : Future<void>
-  }
-
-  class AdminPanelScreen << StatefulWidget >> {
-    - _userService : UserService
-    ==
-    - _showChangeRoleDialog(user) : void
-  }
-}
-
-' ============================================================
-'  WIDGETS
-' ============================================================
-package "widgets" #E8F5E9 {
-
-  class PostCard << StatelessWidget >> {
-    + post : Post
-    + isVisitor : bool
-    + currentUserId : String?
-    + currentUserName : String?
-    + currentUserRole : String?
-    ==
-    + get _isOwner : bool
-    + get _canManage : bool
-    + build(ctx) : Widget
-    + {static} _getDocIcon(ext) : IconData
-    + {static} _getDocColor(ext) : Color
-  }
-
-  class CreatePostSheet << StatefulWidget >> {
-    + authorName : String
-    + userRole : String
-    + authorId : String?
-    + onPostCreated : ValueChanged<Post>?
-    + existingPost : Post?
-    - _postType : String
-    - _isSubmitting : bool
-    - _postService : PostService
-    - _selectedPhotos : List<File>
-    - _selectedDocuments : List<File>
-    ==
-    - _pickPhotos() : Future<void>
-    - _pickDocuments() : Future<void>
-    - _submit() : Future<void>
-    + get _categoryForRole : String
-  }
-
-  class FilterChipWidget << StatelessWidget >> {
-    + text : String
-    + selected : bool
-    + onTap : VoidCallback
-  }
-
-  class MenuOverlay << StatefulWidget >> {
-    - _userRole : String?
-    ==
-    - _loadUserRole() : Future<void>
-    + get _isVisitor : bool
-    + get _isAdmin : bool
-    - _buildMenuItem({...}) : Widget
-  }
-
-  class SectionLabel << StatelessWidget >> {
-    + text : String
-  }
-
-  class ActionTile << StatelessWidget >> {
-    + icon : IconData
-    + title : String
-    + subtitle : String
-    + onTap : VoidCallback
-  }
-}
-
-' ============================================================
-'  CONSTANTS
-' ============================================================
-package "constants" #FFF9C4 {
-  class Constants << (C, #FDD835) >> {
-    + {static} kPrimaryColor : Color
-    + {static} kPrimaryDarkColor : Color
-    + {static} kTextFilledDecoration : InputDecoration
-  }
-}
-
-' ============================================================
-'  FIREBASE (external)
-' ============================================================
-package "Firebase" #FFEBEE {
-  class FirebaseAuth << external >> {
-    + currentUser : User?
-    + signInWithEmailAndPassword() : Future
-    + createUserWithEmailAndPassword() : Future
-    + signInAnonymously() : Future
-  }
-
-  class FirebaseFirestore << external >> {
-    + collection(name) : CollectionReference
-  }
-
-  class FirebaseStorage << external >> {
-    + ref() : Reference
-    + refFromURL(url) : Reference
-  }
-}
-
-' ============================================================
+' ═══════════════════════════════════════════════════════════════
 '  RELATIONSHIPS
-' ============================================================
+' ═══════════════════════════════════════════════════════════════
 
-' Service → Model
-PostService --> Post : CRUD
-UserService --> AppUser : CRUD
-DocumentService --> AcademicDocument : CRUD
+' --- Model internal structure ---
+Semester "1" *-- "1..*" UE      : contains >
+UE       "1" *-- "1..*" Matiere : contains >
+AcademicDocument --> DocumentType : has type >
 
-' Service → Firebase
-DocumentService --> FirebaseStorage : uploads PDFs
-PostService --> FirebaseFirestore : reads/writes
-UserService --> FirebaseFirestore : reads/writes
+' --- Post authored by AppUser ---
+Post "0..*" --> "1" AppUser : authored by >
 
-' HomeFeedScreen
-HomeFeedScreen --> PostService
-HomeFeedScreen ..> PostCard : builds
-HomeFeedScreen ..> FilterChipWidget : builds
-HomeFeedScreen ..> CreatePostSheet : opens
-HomeFeedScreen ..> MenuOverlay : opens
+' --- AcademicDocument uploaded by AppUser ---
+AcademicDocument "0..*" --> "1" AppUser : uploaded by >
 
-' ClubMainPage
-ClubMainPage --> PostService
-ClubMainPage ..> PostCard : builds
+' --- Service -> Model dependencies ---
+PostService     ..> Post             : <<use>>
+DocumentService ..> AcademicDocument : <<use>>
+DocumentService ..> DocumentType     : <<use>>
+UserService     ..> AppUser          : <<use>>
+GradeCalculatorService ..> Semester  : <<use>>
+GradeCalculatorService ..> UE        : <<use>>
+GradeCalculatorService ..> Matiere   : <<use>>
 
-' PostCard
-PostCard --> Post : displays
-
-' CreatePostSheet
-CreatePostSheet --> PostService
-CreatePostSheet ..> Post : creates
-
-' DocumentsScreen
-DocumentsScreen --> DocumentService
-DocumentsScreen ..> UploadDocumentScreen : navigates
-
-' UploadDocumentScreen
-UploadDocumentScreen --> DocumentService
-
-' AdminPanelScreen
-AdminPanelScreen --> UserService
-AdminPanelScreen ..> DocumentsScreen : navigates
-
-' MenuOverlay → Screens
-MenuOverlay ..> AccountSettingsScreen : navigates
-MenuOverlay ..> HelpSupportScreen : navigates
-MenuOverlay ..> DocumentsScreen : navigates
-MenuOverlay ..> AdminPanelScreen : navigates (admin only)
-
-' Settings → Shared widgets
-AccountSettingsScreen ..> SectionLabel
-HelpSupportScreen ..> SectionLabel
-HelpSupportScreen ..> ActionTile
-
-' MyApp → Routes
-MyApp ..> SplashScreen : /splash
-MyApp ..> LoginScreen : /login
-MyApp ..> HomeFeedScreen : /home
-MyApp ..> RegisterScreen : /register
-MyApp ..> ClubMainPage : /club
-MyApp ..> EmailVerificationScreen : /verifyEmail
-MyApp ..> DocumentsScreen : /documents
-MyApp ..> UploadDocumentScreen : /upload-document
-MyApp ..> AdminPanelScreen : /admin
+' --- Service -> Service dependency ---
+DocumentService ..> CloudinaryService  : <<use>>
+DocumentService ..> FilePickerHelper   : <<use>>
+PostService     ..> CloudinaryService  : <<use>>
 
 @enduml

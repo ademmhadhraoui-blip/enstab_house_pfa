@@ -25,6 +25,8 @@ class _UploadDocumentScreenState extends State<UploadDocumentScreen> {
   final _titleCtrl = TextEditingController();
   final _studentNameCtrl = TextEditingController();
   final _supervisorCtrl = TextEditingController();
+  final _indusrtyCtrl = TextEditingController() ;
+  final _startYearCtrl = TextEditingController() ;
   final _yearCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
 
@@ -40,6 +42,8 @@ class _UploadDocumentScreenState extends State<UploadDocumentScreen> {
     _titleCtrl.dispose();
     _studentNameCtrl.dispose();
     _supervisorCtrl.dispose();
+    _indusrtyCtrl.dispose() ;
+    _startYearCtrl.dispose() ;
     _yearCtrl.dispose();
     _descCtrl.dispose();
     super.dispose();
@@ -162,22 +166,24 @@ class _UploadDocumentScreenState extends State<UploadDocumentScreen> {
                         color: Colors.white, size: 26),
                   ),
                   const SizedBox(width: 14),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Upload Document',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Upload Document',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      Text(
-                        'Admin — Add a new academic document',
-                        style: TextStyle(color: Colors.white70, fontSize: 13),
-                      ),
-                    ],
+                        Text(
+                          'Admin — Add a new academic document',
+                          style: TextStyle(color: Colors.white70, fontSize: 13),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -195,12 +201,12 @@ class _UploadDocumentScreenState extends State<UploadDocumentScreen> {
                       // ── Document type selector
                       _sectionLabel('DOCUMENT TYPE'),
                       const SizedBox(height: 10),
-                      Row(
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
                         children: [
                           _buildTypeChip(DocumentType.pfa),
-                          const SizedBox(width: 10),
                           _buildTypeChip(DocumentType.pfe),
-                          const SizedBox(width: 10),
                           _buildTypeChip(DocumentType.collaboration),
                         ],
                       ),
@@ -416,12 +422,12 @@ class _UploadDocumentScreenState extends State<UploadDocumentScreen> {
 
   Widget _buildTypeChip(DocumentType type) {
     final isSelected = _selectedType == type;
-    return Expanded(
+    return IntrinsicWidth(
       child: GestureDetector(
         onTap: () => setState(() => _selectedType = type),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: isSelected ? kPrimaryColor : Colors.white,
             borderRadius: BorderRadius.circular(12),

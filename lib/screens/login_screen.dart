@@ -147,32 +147,47 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                     ),
                     const SizedBox(height: 12.0),
-                    Row(
+                    Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      runSpacing: 4,
                       children: [
-                        Checkbox(
-                          value: _rememberMe,
-                          activeColor: kPrimaryColor,
-                          onChanged: (v) {
-                            setState(() {
-                              _rememberMe = v ?? false;
-                            });
-                          },
-                        ),
-                        const Text(
-                          "Remember me ?",
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                        const Spacer(),
-                        SafeArea(
-                          child: TextButton(
-                            child: const Text(
-                              "Forget Password ?",
-                              style: TextStyle(color: kPrimaryColor),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: Checkbox(
+                                value: _rememberMe,
+                                activeColor: kPrimaryColor,
+                                onChanged: (v) {
+                                  setState(() {
+                                    _rememberMe = v ?? false;
+                                  });
+                                },
+                              ),
                             ),
-                            onPressed: () {
-                              // mot de passe oublié !
-                            },
+                            const SizedBox(width: 4),
+                            const Text(
+                              "Remember me",
+                              style: TextStyle(color: Colors.grey, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
+                          child: const Text(
+                            "Forget Password ?",
+                            style: TextStyle(color: kPrimaryColor, fontSize: 13),
+                          ),
+                          onPressed: () {
+                            // mot de passe oublié !
+                          },
                         ),
                       ],
                     ),
@@ -231,11 +246,13 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                     ),
                     const SizedBox(height: 20.0),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 4,
                       children: [
                         const Text(
-                          "Don't have an account ?",
+                          "Don't have an account ? ",
                           style: TextStyle(color: Colors.grey),
                         ),
                         GestureDetector(
@@ -244,7 +261,10 @@ class _LoginScreenState extends State<LoginScreen>
                           },
                           child: const Text(
                             "Register Now",
-                            style: TextStyle(color: kPrimaryColor),
+                            style: TextStyle(
+                              color: kPrimaryColor,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],

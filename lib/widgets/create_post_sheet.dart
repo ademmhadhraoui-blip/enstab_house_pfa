@@ -405,25 +405,31 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.authorName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.authorName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    Text(
-                      _categoryForRole,
-                      style: const TextStyle(
-                        color: kPrimaryColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                      Text(
+                        _categoryForRole,
+                        style: const TextStyle(
+                          color: kPrimaryColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -432,7 +438,9 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
             // ── POST TYPE SELECTOR
             _sectionLabel('POST TYPE'),
             const SizedBox(height: 10),
-            Row(
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
               children: [
                 _TypeChip(
                   label: 'Normal',
@@ -443,7 +451,6 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
                     _selectedPhotos.clear();
                   }),
                 ),
-                const SizedBox(width: 10),
                 _TypeChip(
                   label: 'Event',
                   icon: Icons.event_outlined,
@@ -453,7 +460,6 @@ class _CreatePostSheetState extends State<CreatePostSheet> {
                     _selectedDocuments.clear();
                   }),
                 ),
-                const SizedBox(width: 10),
                 _TypeChip(
                   label: 'Workshop',
                   icon: Icons.build_outlined,

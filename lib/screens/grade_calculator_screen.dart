@@ -205,12 +205,12 @@ class _SemesterCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       _chip('${semester.ues.length} UEs'),
-                      const SizedBox(width: 8),
                       _chip('${semester.totalMatieres} Subjects'),
-                      const SizedBox(width: 8),
                       _chip('Coeff ${semester.totalCoefficients}'),
                     ],
                   ),

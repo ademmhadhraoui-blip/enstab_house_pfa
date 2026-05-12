@@ -125,9 +125,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
               onPressed: _openCreatePost,
               backgroundColor: kPrimaryColor,
               icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text(
-                'New Post',
-                style: TextStyle(
+              label: Text(
+                'Post',
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
@@ -174,7 +174,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       const SizedBox(width: 8),
                       _buildFilterChip("Clubs"),
                       const SizedBox(width: 8),
-                      _buildFilterChip("Admin"),
+                      _buildFilterChip("Administration"),
                       const SizedBox(width: 8),
                       _buildFilterChip("Professors"),
                       const SizedBox(width: 8),
@@ -362,33 +362,36 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     return Row(
       key: const ValueKey('normal'),
       children: [
-        const Text(
-          "University News",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
+        const Expanded(
+          child: Text(
+            "University News",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
-        const Spacer(),
+        const SizedBox(width: 6),
         GestureDetector(
           onTap: () {
             setState(() => isSearching = true);
           },
-          child: const Icon(Icons.search, color: Colors.white, size: 30),
+          child: const Icon(Icons.search, color: Colors.white, size: 26),
         ),
-        const SizedBox(width: 20),
+        const SizedBox(width: 8),
         GestureDetector(
           onTap: () {
             // NOTIFICATIONS
           },
           child: const Icon(Icons.notifications,
-              color: Colors.white, size: 30),
+              color: Colors.white, size: 26),
         ),
-        const SizedBox(width: 20),
+        const SizedBox(width: 8),
         GestureDetector(
           onTap: () => _openMenuOverlay(context),
-          child: const Icon(Icons.menu, color: Colors.white, size: 30.0),
+          child: const Icon(Icons.menu, color: Colors.white, size: 26.0),
         ),
       ],
     );

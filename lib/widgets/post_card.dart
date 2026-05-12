@@ -89,7 +89,8 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
     return false;
   }
 
-  bool get _canManage => _isOwner || widget.currentUserRole == 'admin';
+  bool get _canManage =>
+      _isOwner || widget.currentUserRole?.toLowerCase() == 'admin';
 
   Future<void> _handleLike() async {
     if (widget.isVisitor || widget.currentUserId == null || widget.post.id == null) {
@@ -165,74 +166,105 @@ class _PostCardState extends State<PostCard> with SingleTickerProviderStateMixin
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Header
-          ListTile(
-            leading: const CircleAvatar(
-              backgroundColor: kPrimaryColor,
-              child: Icon(Icons.person, color: Colors.white),
-            ),
-            title: GestureDetector(
-              onTap: () {
-                Navigator.pushNamed(context, '/club',
-                    arguments: {
-                      'isVisitor': widget.isVisitor,
-                      'clubName': widget.post.author,
-                    });
-              },
-              child: Text(
-                widget.post.author,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            subtitle: Text("${widget.post.category} · ${widget.post.timeAgo}"),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                if (isEvent || isWorkshop)
-                  _PostTypeBadge(
-                    label: isEvent ? 'Event' : 'Workshop',
-                    color: isEvent
-                        ? const Color(0xFF1565C0)
-                        : const Color(0xFF2E7D32),
-                    icon: isEvent
-                        ? Icons.event_outlined
-                        : Icons.build_circle_outlined,
-                  ),
-                if (_canManage)
-                  PopupMenuButton<String>(
-                    icon: Icon(Icons.more_vert, color: Colors.grey[600]),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    onSelected: (value) {
-                      if (value == 'edit') {
-                        _openEditSheet(context);
-                      } else if (value == 'delete') {
-                        _confirmDelete(context);
-                      }
-                    },
-                    itemBuilder: (_) => [
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(Icons.edit_outlined, size: 20, color: kPrimaryColor),
-                            SizedBox(width: 10),
-                            Text('Modify'),
-                          ],
+                const CircleAvatar(
+                  radius: 20,
+                  backgroundColor: kPrimaryColor,
+                  child: Icon(Icons.person, color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pushNamed(context, '/club',
+                              arguments: {
+                                'isVisitor': widget.isVisitor,
+                                'clubName': widget.post.author,
+                              });
+                        },
+                        child: Text(
+                          widget.post.author,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                            SizedBox(width: 10),
-                            Text('Delete', style: TextStyle(color: Colors.red)),
-                          ],
+                      Text(
+                        "${widget.post.category} · ${widget.post.timeAgo}",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
+                ),
+                const SizedBox(width: 8),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isEvent || isWorkshop)
+                      _PostTypeBadge(
+                        label: isEvent ? 'Event' : 'Workshop',
+                        color: isEvent
+                            ? const Color(0xFF1565C0)
+                            : const Color(0xFF2E7D32),
+                        icon: isEvent
+                            ? Icons.event_outlined
+                            : Icons.build_circle_outlined,
+                      ),
+                    if (_canManage)
+                      PopupMenuButton<String>(
+                        icon: Icon(Icons.more_vert, color: Colors.grey[600]),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        onSelected: (value) {
+                          if (value == 'edit') {
+                            _openEditSheet(context);
+                          } else if (value == 'delete') {
+                            _confirmDelete(context);
+                          }
+                        },
+                        itemBuilder: (_) => [
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Row(
+                              children: [
+                                Icon(Icons.edit_outlined, size: 20, color: kPrimaryColor),
+                                SizedBox(width: 10),
+                                Text('Modify'),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                                SizedBox(width: 10),
+                                Text('Delete', style: TextStyle(color: Colors.red)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -741,7 +773,7 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                     final comment = comments[index];
                     final isOwner =
                         comment['authorId'] == widget.currentUserId;
-                    final isAdmin = widget.currentUserRole == 'admin';
+                    final isAdmin = widget.currentUserRole?.toLowerCase() == 'admin';
                     final createdAt = comment['createdAt'] as Timestamp?;
                     final time = createdAt != null
                         ? _formatTime(createdAt.toDate())
@@ -803,17 +835,15 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                         ),
                         // Delete button (owner or admin)
                         if (isOwner || isAdmin)
-                          GestureDetector(
-                            onTap: () async {
-                              await widget.postService.deleteComment(
-                                widget.postId,
-                                comment['id'],
-                              );
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 4),
-                              child: Icon(Icons.close,
-                                  size: 16, color: Colors.grey[400]),
+                          IconButton(
+                            padding: const EdgeInsets.only(left: 4),
+                            constraints: const BoxConstraints(),
+                            icon: Icon(Icons.close,
+                                size: 16, color: Colors.grey[400]),
+                            onPressed: () => _confirmDeleteComment(
+                              context,
+                              comment['id'],
+                              comment['text'] ?? '',
                             ),
                           ),
                       ],
@@ -903,6 +933,49 @@ class _CommentsSheetState extends State<_CommentsSheet> {
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteComment(
+      BuildContext context, String commentId, String commentText) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+            SizedBox(width: 10),
+            Text('Delete comment'),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to delete this comment?\n\n"${commentText.length > 50 ? '${commentText.substring(0, 50)}...' : commentText}"',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await widget.postService.deleteComment(
+                widget.postId,
+                commentId,
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
