@@ -1,0 +1,128 @@
+@startuml
+' ═══════════════════════════════════════════════════════════════
+'  ENSTAB House — UML Use Case Diagram
+' ═══════════════════════════════════════════════════════════════
+
+left to right direction
+
+skinparam actorStyle awesome
+skinparam shadowing false
+
+skinparam usecaseBackgroundColor #FEFEFE
+skinparam usecaseBorderColor #444444
+skinparam usecaseFontSize 12
+
+skinparam actorBorderColor #222222
+skinparam actorFontSize 12
+
+skinparam packageBorderColor #9E0815
+skinparam packageFontColor #9E0815
+skinparam packageFontStyle bold
+
+skinparam ArrowColor #444444
+skinparam ArrowFontSize 11
+
+' ─────────────────────────────
+'  ACTORS
+' ─────────────────────────────
+
+actor "Visitor"            as Visitor
+actor "Authenticated User" as AuthUser
+actor "Administrator"      as Admin
+
+actor "Firebase Auth"      as FirebaseAuth <<system>>
+actor "Cloud Storage"      as CloudStorage <<system>>
+
+' Generalization
+AuthUser --|> Visitor
+Admin    --|> AuthUser
+
+' ─────────────────────────────
+'  SYSTEM BOUNDARY
+' ─────────────────────────────
+
+rectangle "ENSTAB House" {
+
+  ' ── Authentication
+  usecase "Register"     as UC_Register
+  usecase "Log In"       as UC_Login
+  usecase "Verify Email" as UC_VerifyEmail
+
+  ' ── News Feed
+  usecase "Browse Posts"          as UC_BrowsePosts
+  usecase "Search / Filter Posts" as UC_SearchPosts
+  usecase "Like / Comment Post"   as UC_Interact
+
+  ' ── Post Management
+  usecase "Create Post"            as UC_CreatePost
+  usecase "Attach Media/Documents" as UC_Attach
+  usecase "Manage Posts"           as UC_ManagePosts
+
+  ' ── Academic Documents
+  usecase "Browse Academic Documents"   as UC_BrowseDocs
+  usecase "Search / Filter Documents"   as UC_SearchDocs
+  usecase "Manage Academic Documents"   as UC_ManageDocs
+
+  ' ── Grade Calculator
+  usecase "Calculate Semester Average" as UC_CalcGrade
+
+  ' ── Administration
+  usecase "Manage Users" as UC_ManageUsers
+  usecase "Assign Roles" as UC_AssignRoles
+
+}
+
+' ─────────────────────────────
+'  VISITOR ASSOCIATIONS
+' ─────────────────────────────
+
+Visitor --> UC_BrowsePosts
+Visitor --> UC_BrowseDocs
+
+' ─────────────────────────────
+'  AUTHENTICATED USER ASSOCIATIONS
+' ─────────────────────────────
+
+AuthUser --> UC_Register
+AuthUser --> UC_Login
+AuthUser --> UC_SearchPosts
+AuthUser --> UC_Interact
+AuthUser --> UC_CreatePost
+AuthUser --> UC_SearchDocs
+AuthUser --> UC_CalcGrade
+
+' ─────────────────────────────
+'  ADMINISTRATOR ASSOCIATIONS
+' ─────────────────────────────
+
+Admin --> UC_ManagePosts
+Admin --> UC_ManageDocs
+Admin --> UC_ManageUsers
+
+' ─────────────────────────────
+'  EXTERNAL SYSTEM ASSOCIATIONS
+' ─────────────────────────────
+
+FirebaseAuth --> UC_Register
+FirebaseAuth --> UC_Login
+FirebaseAuth --> UC_VerifyEmail
+CloudStorage --> UC_Attach
+
+' ─────────────────────────────
+'  <<include>> RELATIONSHIPS
+' ─────────────────────────────
+
+UC_Register   ..> UC_VerifyEmail : <<include>>
+UC_CreatePost ..> UC_Attach      : <<include>>
+UC_ManageDocs ..> UC_Attach      : <<include>>
+UC_ManageUsers ..> UC_AssignRoles : <<include>>
+
+' ─────────────────────────────
+'  <<extend>> RELATIONSHIPS
+' ─────────────────────────────
+
+UC_BrowsePosts <.. UC_SearchPosts : <<extend>>
+UC_BrowseDocs  <.. UC_SearchDocs  : <<extend>>
+UC_ManagePosts <.. UC_CreatePost  : <<extend>>
+
+@enduml

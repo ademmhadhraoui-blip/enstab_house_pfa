@@ -1,0 +1,345 @@
+@startuml ENSTAB_House_Full_Architecture
+
+' ═══════════════════════════════════════════════════════════════
+'  ENSTAB House — Diagramme B : Full Architecture
+'  (Core Domain + Services + Screens + Widgets + External)
+' ═══════════════════════════════════════════════════════════════
+
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam classFontName "Segoe UI"
+skinparam classBackgroundColor #FEFEFE
+skinparam classBorderColor #333333
+skinparam classBorderThickness 1
+skinparam classArrowColor #555555
+skinparam packageBorderColor #AAAAAA
+skinparam packageFontSize 14
+skinparam packageFontStyle bold
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 50
+skinparam ranksep 40
+
+' ─────────────────────────────────────────────
+'  PACKAGE : models
+' ─────────────────────────────────────────────
+package "models" #EDE7F6 {
+
+  enum DocumentType {
+    pfa
+    pfe
+    collaboration
+    __
+    + toFirestoreString(): String
+    + {static} fromFirestoreString(String?): DocumentType
+    + displayLabel: String
+  }
+
+  class AcademicDocument {
+    - id: String?
+    - title: String
+    - type: DocumentType
+    - studentName: String?
+    - supervisor: String?
+    - year: String
+    - description: String
+    - fileUrl: String
+    - fileName: String
+    - createdAt: DateTime
+    - updatedAt: DateTime?
+    - uploadedBy: String
+    __
+    + toMap(): Map
+    + {static} fromMap(Map, String): AcademicDocument
+    + copyWith(...): AcademicDocument
+  }
+
+  class AppUser {
+    - uid: String
+    - name: String
+    - email: String
+    - role: String
+    - phone: String
+    - createdAt: DateTime
+    + {static} validRoles: List<String>
+    __
+    + isAdmin: bool
+    + isStudent: bool
+    + canPost: bool
+    + canManageAllPosts: bool
+    + canManageDocuments: bool
+    + canAssignRoles: bool
+    + displayRole: String
+    __
+    + toMap(): Map
+    + {static} fromMap(Map, String): AppUser
+    + copyWith(...): AppUser
+  }
+
+  class Post {
+    - id: String?
+    - authorId: String?
+    - author: String
+    - category: String
+    - title: String
+    - description: String
+    - likes: int
+    - comments: int
+    - postType: String
+    - eventDate: String?
+    - eventTime: String?
+    - eventPlace: String?
+    - workshopTime: String?
+    - workshopPlace: String?
+    - workshopInstructor: String?
+    - photos: List<String>
+    - documents: List<String>
+    - likedBy: List<String>
+    - createdAt: DateTime
+    __
+    + toMap(): Map
+    + {static} fromMap(Map, String): Post
+    + copyWith(...): Post
+    + timeAgo: String
+  }
+
+  enum Regime {
+    mixte4060
+    mixte5050
+    controleContinu
+  }
+
+  class Matiere {
+    - nom: String
+    - coefficient: double
+    - regime: Regime
+    __
+    + requiresExamen: bool
+    + regimeLabel: String
+  }
+
+  class UE {
+    - nom: String
+    - matieres: List<Matiere>
+    __
+    + totalCoefficients: double
+  }
+
+  class Semester {
+    - id: String
+    - label: String
+    - subtitle: String
+    - ues: List<UE>
+    __
+    + totalCoefficients: double
+    + totalMatieres: int
+  }
+
+  class SemesterData {
+    + {static} semesters: List<Semester>
+    + {static} sempiereS1: Semester
+    + {static} semestreS2: Semester
+  }
+
+  class MatiereResult {
+    - matiere: Matiere
+    - note: double
+    - isValidated: bool
+  }
+
+  class UEResult {
+    - ue: UE
+    - moyenne: double
+    - isValidated: bool
+    - matiereResults: List<MatiereResult>
+  }
+}
+
+' ─────────────────────────────────────────────
+'  PACKAGE : services
+' ─────────────────────────────────────────────
+package "services" #E3F2FD {
+
+  class CloudinaryService {
+    - {static} _baseUrl: String
+    __
+    + uploadFile(File, String, {folder}): Future<String>
+    + uploadFileWithProgress(File, String, {folder, onProgress}): Future<String>
+  }
+
+  class DocumentService {
+    - _documentsCollection: CollectionReference
+    - _cloudinary: CloudinaryService
+    __
+    + uploadPdf(File, String): Future<String>
+    + uploadPdfWithProgress(File, String, {onProgress}): Future<String>
+    + addDocument(AcademicDocument): Future<void>
+    + getDocuments(): Stream<List<AcademicDocument>>
+    + getDocumentsByType(DocumentType): Stream<List<AcademicDocument>>
+    + updateDocument(AcademicDocument): Future<void>
+    + deleteDocument(String, String): Future<void>
+  }
+
+  class PostService {
+    - _postsCollection: CollectionReference
+    __
+    + addPost(Post): Future<void>
+    + getPosts(): Stream<List<Post>>
+    + getPostsByCategory(String): Stream<List<Post>>
+    + updatePost(Post): Future<void>
+    + deletePost(String): Future<void>
+    + toggleLike(String, String): Future<bool>
+    + hasLiked(String, String): Future<bool>
+    + addComment({postId, authorId, authorName, text}): Future<void>
+    + getComments(String): Stream<List<Map>>
+    + deleteComment(String, String): Future<void>
+  }
+
+  class UserService {
+    - _usersCollection: CollectionReference
+    __
+    + getUserById(String): Future<AppUser?>
+    + getCurrentUser(): Future<AppUser?>
+    + currentUserStream(): Stream<AppUser?>
+    + getAllUsers(): Stream<List<AppUser>>
+    + updateUserRole(String, String): Future<void>
+    + deleteUser(String): Future<void>
+  }
+
+  class GradeCalculatorService {
+    + {static} validateNote(String?): String?
+    + {static} calculerNoteMatiere({Regime, double?, double?}): double?
+    + {static} calculerMoyenneUE(UE, Map): double?
+    + {static} calculerMoyenneGenerale(List<UE>, Map): double?
+    + {static} matieresNonValidees(List<UE>, Map): List<MatiereResult>
+    + {static} simulerNoteExamenRequise({Regime, double, double}): double?
+    + {static} calculerResultatsUE(List<UE>, Map): List<UEResult>
+  }
+
+  class FilePickerHelper {
+    + {static} pickPdfFile({onError}): Future<File?>
+    + {static} pickDocuments({onError}): Future<List<File>>
+    + {static} pickPhotosFromGallery({onError}): Future<List<File>>
+    + {static} takePhotoWithCamera(BuildContext, {onError}): Future<File?>
+    + {static} requestCameraPermission(BuildContext): Future<bool>
+  }
+}
+
+' ─────────────────────────────────────────────
+'  PACKAGE : screens (simplifié)
+' ─────────────────────────────────────────────
+package "screens" #FFF8E1 {
+  class MyApp << (E,#FFCC80) entry >>
+  class SplashScreen
+  class LoginScreen
+  class RegisterScreen
+  class EmailVerificationScreen
+  class HomeFeedScreen
+  class ClubMainPage
+  class DocumentsScreen
+  class UploadDocumentScreen
+  class AdminPanelScreen
+  class GradeCalculatorScreen
+}
+
+' ─────────────────────────────────────────────
+'  PACKAGE : widgets (simplifié)
+' ─────────────────────────────────────────────
+package "widgets" #E8F5E9 {
+  class PostCard
+  class CreatePostSheet
+  class MenuOverlay
+  class FilterChipWidget
+  class SettingsShared
+}
+
+' ─────────────────────────────────────────────
+'  PACKAGE : external
+' ─────────────────────────────────────────────
+package "external" #ECEFF1 {
+  class FirebaseAuth <<external>>
+  class Firestore <<external>>
+  class CloudinaryAPI <<external>>
+}
+
+' ═════════════════════════════════════════════
+'  RELATIONS : Composition
+' ═════════════════════════════════════════════
+Semester *-- "1..*" UE : contient
+UE *-- "1..*" Matiere : contient
+UEResult *-- "0..*" MatiereResult : contient
+
+' ═════════════════════════════════════════════
+'  RELATIONS : Agrégation
+' ═════════════════════════════════════════════
+SemesterData o-- "2" Semester : référence
+
+' ═════════════════════════════════════════════
+'  RELATIONS : Associations dirigées
+' ═════════════════════════════════════════════
+AcademicDocument --> DocumentType : type
+Matiere --> Regime : regime
+MatiereResult --> Matiere : matiere
+UEResult --> UE : ue
+
+' ═════════════════════════════════════════════
+'  RELATIONS : Dépendances services → modèles
+' ═════════════════════════════════════════════
+DocumentService ..> AcademicDocument : <<use>>
+DocumentService ..> DocumentType : <<use>>
+DocumentService ..> CloudinaryService : <<use>>
+PostService ..> Post : <<use>>
+UserService ..> AppUser : <<use>>
+GradeCalculatorService ..> Matiere : <<use>>
+GradeCalculatorService ..> UE : <<use>>
+GradeCalculatorService ..> Regime : <<use>>
+GradeCalculatorService ..> MatiereResult : <<create>>
+GradeCalculatorService ..> UEResult : <<create>>
+
+' ═════════════════════════════════════════════
+'  RELATIONS : Dépendances services → external
+' ═════════════════════════════════════════════
+DocumentService ..> Firestore
+PostService ..> Firestore
+UserService ..> Firestore
+UserService ..> FirebaseAuth
+CloudinaryService ..> CloudinaryAPI
+
+' ═════════════════════════════════════════════
+'  RELATIONS : Dépendances screens → services
+' ═════════════════════════════════════════════
+HomeFeedScreen ..> PostService
+HomeFeedScreen ..> UserService
+DocumentsScreen ..> DocumentService
+UploadDocumentScreen ..> DocumentService
+UploadDocumentScreen ..> FilePickerHelper
+AdminPanelScreen ..> UserService
+GradeCalculatorScreen ..> GradeCalculatorService
+GradeCalculatorScreen ..> SemesterData
+LoginScreen ..> FirebaseAuth
+RegisterScreen ..> FirebaseAuth
+EmailVerificationScreen ..> FirebaseAuth
+EmailVerificationScreen ..> Firestore
+
+' ═════════════════════════════════════════════
+'  RELATIONS : Dépendances screens → widgets
+' ═════════════════════════════════════════════
+HomeFeedScreen ..> PostCard
+HomeFeedScreen ..> CreatePostSheet
+HomeFeedScreen ..> FilterChipWidget
+
+' ═════════════════════════════════════════════
+'  RELATIONS : Navigation (MyApp)
+' ═════════════════════════════════════════════
+MyApp ..> SplashScreen : route /splash
+MyApp ..> LoginScreen : route /login
+MyApp ..> RegisterScreen : route /register
+MyApp ..> EmailVerificationScreen : route /verifyEmail
+MyApp ..> HomeFeedScreen : route /home
+MyApp ..> ClubMainPage : route /club
+MyApp ..> DocumentsScreen : route /documents
+MyApp ..> UploadDocumentScreen : route /upload-document
+MyApp ..> AdminPanelScreen : route /admin
+MyApp ..> GradeCalculatorScreen : route /grade-calculator
+
+@enduml
